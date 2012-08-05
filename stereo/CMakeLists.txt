@@ -1,0 +1,5 @@
+cmake_minimum_required (VERSION 2.6)
+project(stereo)
+find_package(OpenCV REQUIRED)
+add_executable(stereo-calib stereo_calib.cpp)
+target_link_libraries(stereo-calib ${OpenCV_LIBS})
