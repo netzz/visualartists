@@ -1,311 +1,529 @@
-/*
- *  stereo_match.cpp
- *  calibration
- *
- *  Created by Victor  Eruhimov on 1/18/10.
- *  Copyright 2010 Argus Corp. All rights reserved.
- *
- */
-
-#include "opencv2/calib3d/calib3d.hpp"
-#include "opencv2/imgproc/imgproc.hpp"
-#include "opencv2/highgui/highgui.hpp"
-#include "opencv2/contrib/contrib.hpp"
-
 #include <stdio.h>
+#include <iostream>
+#include <string>
+#include <sstream>
+#include <iomanip>
+#include <stdexcept>
+#include "opencv2/gpu/gpu.hpp"
+#include "opencv2/highgui/highgui.hpp"
+#include "opencv2/calib3d/calib3d.hpp"
 
 using namespace cv;
+using namespace std;
 
-void print_help()
-{
-	printf("\nDemo stereo matching converting L and R images into disparity and point clouds\n");
-    printf("\nUsage: stereo_match <left_image> <right_image> [--algorithm=bm|sgbm|hh|var] [--blocksize=<block_size>]\n"
-           "[--max-disparity=<max_disparity>] [--scale=scale_factor>] [-i <intrinsic_filename>] [-e <extrinsic_filename>]\n"
-           "[--no-display] [-o <disparity_image>] [-p <point_cloud_file>]\n");
-}
+bool help_showed = false;
 
-void saveXYZ(const char* filename, const Mat& mat)
+struct Params
 {
-    const double max_z = 1.0e4;
-    FILE* fp = fopen(filename, "wt");
-    for(int y = 0; y < mat.rows; y++)
+    Params();
+    static Params read(int argc, char** argv);
+
+    string left;
+    string right;
+
+    string method_str() const
     {
-        for(int x = 0; x < mat.cols; x++)
+        switch (method)
         {
-            Vec3f point = mat.at<Vec3f>(y, x);
-            if(fabs(point[2] - max_z) < FLT_EPSILON || fabs(point[2]) > max_z) continue;
-            fprintf(fp, "%f %f %f\n", point[0], point[1], point[2]);
+        case BM: return "BM";
+        case BP: return "BP";
+        case CSBP: return "CSBP";
         }
+        return "";
     }
-    fclose(fp);
+    enum {BM, BP, CSBP} method;
+    int ndisp; // Max disparity + 1
+};
+
+
+struct App
+{
+    App(const Params& p);
+    void run();
+    void handleKey(char key);
+    void printParams() const;
+
+    void workBegin() { work_begin = getTickCount(); }
+    void workEnd()
+    {
+        int64 d = getTickCount() - work_begin;
+        double f = getTickFrequency();
+        work_fps = f / d;
+    }
+
+    string text() const
+    {
+        stringstream ss;
+        ss << "(" << p.method_str() << ") FPS: " << setiosflags(ios::left)
+            << setprecision(4) << work_fps;
+        return ss.str();
+    }
+private:
+    Params p;
+    bool running;
+
+	VideoCapture leftCamera, rightCamera;
+	
+    Mat map11, map12, map21, map22;
+
+    Mat leftSrc, rightSrc;
+    Mat left, right;
+    gpu::GpuMat d_left, d_right;
+
+    gpu::StereoBM_GPU bm;
+    gpu::StereoBeliefPropagation bp;
+    gpu::StereoConstantSpaceBP csbp;
+
+	StereoBM bmCpu;
+	StereoSGBM sgbm;
+    int64 work_begin;
+    double work_fps;
+};
+
+static void printHelp()
+{
+    cout << "Usage: stereo_match_gpu\n"
+        << "\t--left <left_view> --right <right_view> # must be rectified\n"
+        << "\t--method <stereo_match_method> # BM | BP | CSBP\n"
+        << "\t--ndisp <number> # number of disparity levels\n";
+    help_showed = true;
 }
 
 int main(int argc, char** argv)
 {
-    const char* algorithm_opt = "--algorithm=";
-    const char* maxdisp_opt = "--max-disparity=";
-    const char* blocksize_opt = "--blocksize=";
-    const char* nodisplay_opt = "--no-display=";
-    const char* scale_opt = "--scale=";
-    
-    if(argc < 3)
+    try
     {
-        print_help();
-		return 0;
-    }
-    const char* img1_filename = 0;
-    const char* img2_filename = 0;
-    const char* intrinsic_filename = 0;
-    const char* extrinsic_filename = 0;
-    const char* disparity_filename = 0;
-    const char* point_cloud_filename = 0;
-    
-    enum { STEREO_BM=0, STEREO_SGBM=1, STEREO_HH=2, STEREO_VAR=3 };
-    int alg = STEREO_SGBM;
-    int SADWindowSize = 0, numberOfDisparities = 0;
-    bool no_display = false;
-    float scale = 1.f;
-    
-    StereoBM bm;
-    StereoSGBM sgbm;
-    StereoVar var;
-    
-    for( int i = 1; i < argc; i++ )
-    {
-        if( argv[i][0] != '-' )
+        if (argc < 2)
         {
-            if( !img1_filename )
-                img1_filename = argv[i];
-            else
-                img2_filename = argv[i];
+            printHelp();
+            return 1;
         }
-        else if( strncmp(argv[i], algorithm_opt, strlen(algorithm_opt)) == 0 )
-        {
-            char* _alg = argv[i] + strlen(algorithm_opt);
-            alg = strcmp(_alg, "bm") == 0 ? STEREO_BM :
-                  strcmp(_alg, "sgbm") == 0 ? STEREO_SGBM :
-                  strcmp(_alg, "hh") == 0 ? STEREO_HH :
-                  strcmp(_alg, "var") == 0 ? STEREO_VAR : -1;
-            if( alg < 0 )
-            {
-                printf("Command-line parameter error: Unknown stereo algorithm\n\n");
-                print_help();
-                return -1;
-            }
-        }
-        else if( strncmp(argv[i], maxdisp_opt, strlen(maxdisp_opt)) == 0 )
-        {
-            if( sscanf( argv[i] + strlen(maxdisp_opt), "%d", &numberOfDisparities ) != 1 ||
-                numberOfDisparities < 1 || numberOfDisparities % 16 != 0 )
-            {
-                printf("Command-line parameter error: The max disparity (--maxdisparity=<...>) must be a positive integer divisible by 16\n");
-                print_help();
-                return -1;
-            }
-        }
-        else if( strncmp(argv[i], blocksize_opt, strlen(blocksize_opt)) == 0 )
-        {
-            if( sscanf( argv[i] + strlen(blocksize_opt), "%d", &SADWindowSize ) != 1 ||
-                SADWindowSize < 1 || SADWindowSize % 2 != 1 )
-            {
-                printf("Command-line parameter error: The block size (--blocksize=<...>) must be a positive odd number\n");
-                return -1;
-            }
-        }
-        else if( strncmp(argv[i], scale_opt, strlen(scale_opt)) == 0 )
-        {
-            if( sscanf( argv[i] + strlen(scale_opt), "%f", &scale ) != 1 || scale < 0 )
-            {
-                printf("Command-line parameter error: The scale factor (--scale=<...>) must be a positive floating-point number\n");
-                return -1;
-            }
-        }
-        else if( strcmp(argv[i], nodisplay_opt) == 0 )
-            no_display = true;
-        else if( strcmp(argv[i], "-i" ) == 0 )
-            intrinsic_filename = argv[++i];
-        else if( strcmp(argv[i], "-e" ) == 0 )
-            extrinsic_filename = argv[++i];
-        else if( strcmp(argv[i], "-o" ) == 0 )
-            disparity_filename = argv[++i];
-        else if( strcmp(argv[i], "-p" ) == 0 )
-            point_cloud_filename = argv[++i];
-        else
-        {
-            printf("Command-line parameter error: unknown option %s\n", argv[i]);
+        Params args = Params::read(argc, argv);
+        if (help_showed)
             return -1;
+        App app(args);
+        app.run();
+    }
+    catch (const exception& e)
+    {
+        cout << "error: " << e.what() << endl;
+    }
+    return 0;
+}
+
+
+Params::Params()
+{
+    method = BM;
+    ndisp = 64;
+}
+
+
+Params Params::read(int argc, char** argv)
+{
+    Params p;
+
+    for (int i = 1; i < argc; i++)
+    {
+        if (string(argv[i]) == "--left") p.left = argv[++i];
+        else if (string(argv[i]) == "--right") p.right = argv[++i];
+        else if (string(argv[i]) == "--method")
+        {
+            if (string(argv[i + 1]) == "BM") p.method = BM;
+            else if (string(argv[i + 1]) == "BP") p.method = BP;
+            else if (string(argv[i + 1]) == "CSBP") p.method = CSBP;
+            else throw runtime_error("unknown stereo match method: " + string(argv[i + 1]));
+            i++;
         }
+        else if (string(argv[i]) == "--ndisp") p.ndisp = atoi(argv[++i]);
+        else if (string(argv[i]) == "--help") printHelp();
+        else throw runtime_error("unknown key: " + string(argv[i]));
     }
-    
-    if( !img1_filename || !img2_filename )
-    {
-        printf("Command-line parameter error: both left and right images must be specified\n");
-        return -1;
-    }
-    
-    if( (intrinsic_filename != 0) ^ (extrinsic_filename != 0) )
-    {
-        printf("Command-line parameter error: either both intrinsic and extrinsic parameters must be specified, or none of them (when the stereo pair is already rectified)\n");
-        return -1;
-    }
-    
-    if( extrinsic_filename == 0 && point_cloud_filename )
-    {
-        printf("Command-line parameter error: extrinsic and intrinsic parameters must be specified to compute the point cloud\n");
-        return -1;
-    }
-    
-    int color_mode = alg == STEREO_BM ? 0 : -1;
-    Mat img1 = imread(img1_filename, color_mode);
-//	equalizeHist(img1, img1);
-    Mat img2 = imread(img2_filename, color_mode);
-//	equalizeHist(img2, img2);
-    
-    if( scale != 1.f )
-    {
-        Mat temp1, temp2;
-        int method = scale < 1 ? INTER_AREA : INTER_CUBIC;
-        resize(img1, temp1, Size(), scale, scale, method);
-        img1 = temp1;
-        resize(img2, temp2, Size(), scale, scale, method);
-        img2 = temp2;
-    }
-    
-    Size img_size = img1.size();
-    
-    Rect roi1, roi2;
-    Mat Q;
-    
-    if( intrinsic_filename )
-    {
-        // reading intrinsic parameters
-        FileStorage fs(intrinsic_filename, CV_STORAGE_READ);
+
+    return p;
+}
+
+
+App::App(const Params& params)
+    : p(params), running(false)
+{
+    cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
+
+	//Create VideoCaptures
+	printf("Open left camera...");
+	leftCamera.open(0);
+	if (leftCamera.isOpened()) {
+		printf("Ok\n");
+            leftCamera.set(CV_CAP_PROP_FRAME_WIDTH, 800);
+            leftCamera.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+	} else {
+		printf("Fail\n");
+		return;
+	}
+
+	printf("Open right camera...");
+	rightCamera.open(1);
+	if (rightCamera.isOpened()) {
+		printf("Ok\n");
+		rightCamera.set(CV_CAP_PROP_FRAME_WIDTH, 800);
+            	rightCamera.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+	} else {
+		printf("Fail\n");
+		return;
+	}
+
+        // loading intrinsic parameters
+        FileStorage fs("intrinsics.yml", CV_STORAGE_READ);
         if(!fs.isOpened())
         {
-            printf("Failed to open file %s\n", intrinsic_filename);
-            return -1;
+            printf("Failed to open file\n");
+            return;
         }
-        
+
         Mat M1, D1, M2, D2;
         fs["M1"] >> M1;
         fs["D1"] >> D1;
         fs["M2"] >> M2;
         fs["D2"] >> D2;
-        
-        fs.open(extrinsic_filename, CV_STORAGE_READ);
+
+
+		//loading estrisic parameters
+        fs.open("extrinsics.yml", CV_STORAGE_READ);
         if(!fs.isOpened())
         {
-            printf("Failed to open file %s\n", extrinsic_filename);
-            return -1;
+            printf("Failed to open file\n");
+            return;
         }
-        
-        Mat R, T, R1, P1, R2, P2;
+
+        Mat R, T, R1, P1, R2, P2, Q;
+		Rect roi1, roi2;
+
         fs["R"] >> R;
         fs["T"] >> T;
-        
+
+	Size img_size = Size(800, 600);
         stereoRectify( M1, D1, M2, D2, img_size, R, T, R1, R2, P1, P2, Q, CALIB_ZERO_DISPARITY, -1, img_size, &roi1, &roi2 );
-        
-        Mat map11, map12, map21, map22;
+
         initUndistortRectifyMap(M1, D1, R1, P1, img_size, CV_16SC2, map11, map12);
         initUndistortRectifyMap(M2, D2, R2, P2, img_size, CV_16SC2, map21, map22);
-        
-        Mat img1r, img2r;
-        remap(img1, img1r, map11, map12, INTER_LINEAR);
-        remap(img2, img2r, map21, map22, INTER_LINEAR);
-        
-        img1 = img1r;
-        img2 = img2r;
-    }
-    
-    numberOfDisparities = numberOfDisparities > 0 ? numberOfDisparities : ((img_size.width/8) + 15) & -16;
-    
-    bm.state->roi1 = roi1;
-    bm.state->roi2 = roi2;
-    bm.state->preFilterCap = 31;
-    bm.state->SADWindowSize = SADWindowSize > 0 ? SADWindowSize : 9;
-    bm.state->minDisparity = 0;
-    bm.state->numberOfDisparities = numberOfDisparities;
-    bm.state->textureThreshold = 10;
-    bm.state->uniquenessRatio = 15;
-    bm.state->speckleWindowSize = 100;
-    bm.state->speckleRange = 32;
-    bm.state->disp12MaxDiff = 1;
-    
-    sgbm.preFilterCap = 63;
-    sgbm.SADWindowSize = SADWindowSize > 0 ? SADWindowSize : 3;
-    
-    int cn = img1.channels();
-    
+	
+
+
+    bmCpu.state->roi1 = roi1;
+    bmCpu.state->roi2 = roi2;
+    bmCpu.state->preFilterCap = 63;
+    bmCpu.state->SADWindowSize = 5;
+    bmCpu.state->minDisparity = 0;
+    bmCpu.state->numberOfDisparities = ((img_size.width/8) + 15) & -16;
+    bmCpu.state->textureThreshold = 10;
+    bmCpu.state->uniquenessRatio = 5;
+    bmCpu.state->speckleWindowSize = 100;
+    bmCpu.state->speckleRange = 32;
+    bmCpu.state->disp12MaxDiff = 1;
+	
+	sgbm.preFilterCap = 63;
+    sgbm.SADWindowSize = 5;//SADWindowSize > 0 ? SADWindowSize : 3;
+
+    int cn = 1;//img1.channels();
+
     sgbm.P1 = 8*cn*sgbm.SADWindowSize*sgbm.SADWindowSize;
     sgbm.P2 = 32*cn*sgbm.SADWindowSize*sgbm.SADWindowSize;
     sgbm.minDisparity = 0;
-    sgbm.numberOfDisparities = numberOfDisparities;
+    sgbm.numberOfDisparities = bmCpu.state->numberOfDisparities;
     sgbm.uniquenessRatio = 10;
-    sgbm.speckleWindowSize = bm.state->speckleWindowSize;
-    sgbm.speckleRange = bm.state->speckleRange;
-    sgbm.disp12MaxDiff = 1;
-    sgbm.fullDP = alg == STEREO_HH;
-    
-    var.levels = 3;									// ignored with USE_AUTO_PARAMS
-	var.pyrScale = 0.5;								// ignored with USE_AUTO_PARAMS
-	var.nIt = 25;
-	var.minDisp = -numberOfDisparities;	
-	var.maxDisp = 0;
-	var.poly_n = 3;
-	var.poly_sigma = 0.0;
-	var.fi = 15.0f;
-	var.lambda = 0.03f;
-	var.penalization = var.PENALIZATION_TICHONOV;	// ignored with USE_AUTO_PARAMS
-	var.cycle = var.CYCLE_V;						// ignored with USE_AUTO_PARAMS
-	var.flags = var.USE_SMART_ID | var.USE_AUTO_PARAMS | var.USE_INITIAL_DISPARITY | var.USE_MEDIAN_FILTERING ;
-    
-    Mat disp, disp8;
-    //Mat img1p, img2p, dispp;
-    //copyMakeBorder(img1, img1p, 0, 0, numberOfDisparities, 0, IPL_BORDER_REPLICATE);
-    //copyMakeBorder(img2, img2p, 0, 0, numberOfDisparities, 0, IPL_BORDER_REPLICATE);
-    
-    int64 t = getTickCount();
-    if( alg == STEREO_BM )
-        bm(img1, img2, disp);
-    else if( alg == STEREO_VAR ) {
-        var(img1, img2, disp);
-	}
-    else if( alg == STEREO_SGBM || alg == STEREO_HH )
-        sgbm(img1, img2, disp);
-    t = getTickCount() - t;
-    printf("Time elapsed: %fms\n", t*1000/getTickFrequency());
-
-    //disp = dispp.colRange(numberOfDisparities, img1p.cols);
-    if( alg != STEREO_VAR )
-        disp.convertTo(disp8, CV_8U, 255/(numberOfDisparities*16.));
-    else
-        disp.convertTo(disp8, CV_8U);
-    if( !no_display )
-    {
-        namedWindow("left", 1);
-        imshow("left", img1);
-        namedWindow("right", 1);
-        imshow("right", img2);
-        namedWindow("disparity", 0);
-        imshow("disparity", disp8);
-        printf("press any key to continue...");
-        fflush(stdout);
-        waitKey();
-        printf("\n");
-    }
-    
-    if(disparity_filename)
-        imwrite(disparity_filename, disp8);
-    
-    if(point_cloud_filename)
-    {
-        printf("storing the point cloud...");
-        fflush(stdout);
-        Mat xyz;
-        reprojectImageTo3D(disp, xyz, Q, false);
-        saveXYZ(point_cloud_filename, xyz);
-        printf("\n");
-    }
-    
-    return 0;
+    sgbm.speckleWindowSize = bmCpu.state->speckleWindowSize;
+    sgbm.speckleRange = bmCpu.state->speckleRange;
+    sgbm.disp12MaxDiff = 2;
+    sgbm.fullDP = 2;//alg == STEREO_HH;
+cout << "stereo_match_gpu sample\n";
+    cout << "\nControls:\n"
+        << "\tesc - exit\n"
+        << "\tp - print current parameters\n"
+        << "\tg - convert source images into gray\n"
+        << "\tm - change stereo match method\n"
+        << "\ts - change Sobel prefiltering flag (for BM only)\n"
+        << "\t1/q - increase/decrease maximum disparity\n"
+        << "\t2/w - increase/decrease window size (for BM only)\n"
+        << "\t3/e - increase/decrease iteration count (for BP and CSBP only)\n"
+        << "\t4/r - increase/decrease level count (for BP and CSBP only)\n";
 }
+
+
+void App::run()
+{
+ /*   // Load images
+    left_src = imread(p.left);
+    right_src = imread(p.right);
+    if (left_src.empty()) throw runtime_error("can't open file \"" + p.left + "\"");
+    if (right_src.empty()) throw runtime_error("can't open file \"" + p.right + "\"");
+    cvtColor(left_src, left, CV_BGR2GRAY);
+    cvtColor(right_src, right, CV_BGR2GRAY);
+    d_left.upload(left);
+    d_right.upload(right);
+
+	
+    imshow("left", left);
+    imshow("right", right);
+
+    // Set common parameters
+    bm.ndisp = p.ndisp;
+    bp.ndisp = p.ndisp;
+    csbp.ndisp = p.ndisp;
+
+    // Prepare disparity map of specified type
+    Mat disp(left.size(), CV_8U);
+    gpu::GpuMat d_disp(left.size(), CV_8U);
+
+    cout << endl;
+    printParams();
+*/
+	leftCamera >> leftSrc;
+	rightCamera >> rightSrc;
+    
+	// Set common parameters
+    	bm.ndisp = p.ndisp;
+    	bp.ndisp = p.ndisp;
+    	csbp.ndisp = p.ndisp;
+
+    	// Prepare disparity map of specified type
+    	Mat disp(left.size(), CV_8U);
+    	gpu::GpuMat d_disp(left.size(), CV_8U);
+
+    	cout << endl;
+    	printParams();
+
+    running = true;
+    while (running)
+    {
+	    leftCamera >> leftSrc;
+	    rightCamera >> rightSrc;
+
+		if (leftSrc.empty()) throw runtime_error("can't retrive left frame \"" + p.left + "\"");
+	    if (rightSrc.empty()) throw runtime_error("can't retrive right frame \"" + p.right + "\"");
+
+	    
+	Mat leftTemp, rightTemp;
+	remap(leftSrc, leftTemp, map11, map12, INTER_LINEAR);
+        remap(rightSrc, rightTemp, map21, map22, INTER_LINEAR);
+		
+//		leftSrc = leftTemp;
+//		rightSrc = rightTemp;
+
+	    
+	
+		
+		cvtColor(leftTemp, left, CV_BGR2GRAY);
+	    cvtColor(rightTemp, right, CV_BGR2GRAY);
+	    d_left.upload(left);
+	    d_right.upload(right);
+
+		
+	    imshow("left", left);
+	    imshow("right", right);
+
+        workBegin();
+        switch (p.method)
+        {
+        case Params::BM:
+            if (d_left.channels() > 1 || d_right.channels() > 1)
+            {
+                cout << "BM doesn't support color images\n";
+                cvtColor(leftSrc, left, CV_BGR2GRAY);
+                cvtColor(rightSrc, right, CV_BGR2GRAY);
+                cout << "image_channels: " << left.channels() << endl;
+                d_left.upload(left);
+                d_right.upload(right);
+                imshow("left", left);
+                imshow("right", right);
+            }
+//            bm(d_left, d_right, d_disp);
+            break;
+        case Params::BP: bp(d_left, d_right, d_disp); break;
+        case Params::CSBP: csbp(d_left, d_right, d_disp); break;
+        }
+	
+    // 	equalizeHist(left, left);
+//	equalizeHist(right, right);
+	Mat l, r, d;
+	resize(left, l, Size(320, 240));
+	resize(right, r, Size(320, 240));
+	sgbm(l, r, d);
+	resize(d, disp, Size(800, 600), INTER_CUBIC);
+	workEnd();
+
+        // Show results
+//        d_disp.download(disp);
+        putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
+       
+	Mat disp8;
+	disp.convertTo(disp8, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
+	imshow("disparity", disp8);
+
+        handleKey((char)waitKey(3));
+    }
+}
+
+
+void App::printParams() const
+{
+    cout << "--- Parameters ---\n";
+    cout << "image_size: (" << left.cols << ", " << left.rows << ")\n";
+    cout << "image_channels: " << left.channels() << endl;
+    cout << "method: " << p.method_str() << endl
+        << "ndisp: " << p.ndisp << endl;
+    switch (p.method)
+    {
+    case Params::BM:
+        cout << "win_size: " << bm.winSize << endl;
+        cout << "prefilter_sobel: " << bm.preset << endl;
+        break;
+    case Params::BP:
+        cout << "iter_count: " << bp.iters << endl;
+        cout << "level_count: " << bp.levels << endl;
+        break;
+    case Params::CSBP:
+        cout << "iter_count: " << csbp.iters << endl;
+        cout << "level_count: " << csbp.levels << endl;
+        break;
+    }
+    cout << endl;
+}
+
+
+void App::handleKey(char key)
+{
+    switch (key)
+    {
+    case 27:
+        running = false;
+        break;
+    case 'p': case 'P':
+        printParams();
+        break;
+    case 'g': case 'G':
+        if (left.channels() == 1 && p.method != Params::BM)
+        {
+            left = leftSrc;
+            right = rightSrc;
+        }
+        else
+        {
+            cvtColor(leftSrc, left, CV_BGR2GRAY);
+            cvtColor(rightSrc, right, CV_BGR2GRAY);
+        }
+        d_left.upload(left);
+        d_right.upload(right);
+        cout << "image_channels: " << left.channels() << endl;
+        imshow("left", left);
+        imshow("right", right);
+        break;
+    case 'm': case 'M':
+        switch (p.method)
+        {
+        case Params::BM:
+            p.method = Params::BP;
+            break;
+        case Params::BP:
+            p.method = Params::CSBP;
+            break;
+        case Params::CSBP:
+            p.method = Params::BM;
+            break;
+        }
+        cout << "method: " << p.method_str() << endl;
+        break;
+    case 's': case 'S':
+        if (p.method == Params::BM)
+        {
+            switch (bm.preset)
+            {
+            case gpu::StereoBM_GPU::BASIC_PRESET:
+                bm.preset = gpu::StereoBM_GPU::PREFILTER_XSOBEL;
+                break;
+            case gpu::StereoBM_GPU::PREFILTER_XSOBEL:
+                bm.preset = gpu::StereoBM_GPU::BASIC_PRESET;
+                break;
+            }
+            cout << "prefilter_sobel: " << bm.preset << endl;
+        }
+        break;
+    case '1':
+        p.ndisp = p.ndisp == 1 ? 8 : p.ndisp + 8;
+        cout << "ndisp: " << p.ndisp << endl;
+        bm.ndisp = p.ndisp;
+        bp.ndisp = p.ndisp;
+        csbp.ndisp = p.ndisp;
+        break;
+    case 'q': case 'Q':
+        p.ndisp = max(p.ndisp - 8, 1);
+        cout << "ndisp: " << p.ndisp << endl;
+        bm.ndisp = p.ndisp;
+        bp.ndisp = p.ndisp;
+        csbp.ndisp = p.ndisp;
+        break;
+    case '2':
+        if (p.method == Params::BM)
+        {
+            bm.winSize = min(bm.winSize + 1, 51);
+            cout << "win_size: " << bm.winSize << endl;
+        }
+        break;
+    case 'w': case 'W':
+        if (p.method == Params::BM)
+        {
+            bm.winSize = max(bm.winSize - 1, 2);
+            cout << "win_size: " << bm.winSize << endl;
+        }
+        break;
+    case '3':
+        if (p.method == Params::BP)
+        {
+            bp.iters += 1;
+            cout << "iter_count: " << bp.iters << endl;
+        }
+        else if (p.method == Params::CSBP)
+        {
+            csbp.iters += 1;
+            cout << "iter_count: " << csbp.iters << endl;
+        }
+        break;
+    case 'e': case 'E':
+        if (p.method == Params::BP)
+        {
+            bp.iters = max(bp.iters - 1, 1);
+            cout << "iter_count: " << bp.iters << endl;
+        }
+        else if (p.method == Params::CSBP)
+        {
+            csbp.iters = max(csbp.iters - 1, 1);
+            cout << "iter_count: " << csbp.iters << endl;
+        }
+        break;
+    case '4':
+        if (p.method == Params::BP)
+        {
+            bp.levels += 1;
+            cout << "level_count: " << bp.levels << endl;
+        }
+        else if (p.method == Params::CSBP)
+        {
+            csbp.levels += 1;
+            cout << "level_count: " << csbp.levels << endl;
+        }
+        break;
+    case 'r': case 'R':
+        if (p.method == Params::BP)
+        {
+            bp.levels = max(bp.levels - 1, 1);
+            cout << "level_count: " << bp.levels << endl;
+        }
+        else if (p.method == Params::CSBP)
+        {
+            csbp.levels = max(csbp.levels - 1, 1);
+            cout << "level_count: " << csbp.levels << endl;
+        }
+        break;
+    }
+}
+
+
