@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include "opencv2/gpu/gpu.hpp"
 #include "opencv2/highgui/highgui.hpp"
+#include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 
 using namespace cv;
@@ -76,6 +77,12 @@ private:
 
 	StereoBM bmCpu;
 	StereoSGBM sgbm;
+
+	//countours
+	vector<vector<Point> > contours, appContours;
+	double thresh;
+	Mat contoursImage;
+
     int64 work_begin;
     double work_fps;
 };
@@ -224,7 +231,7 @@ App::App(const Params& params)
 	sgbm.preFilterCap = 63;
     sgbm.SADWindowSize = 5;//SADWindowSize > 0 ? SADWindowSize : 3;
 
-    int cn = 1;//img1.channels();
+    int cn = 3;//img1.channels();
 
     sgbm.P1 = 8*cn*sgbm.SADWindowSize*sgbm.SADWindowSize;
     sgbm.P2 = 32*cn*sgbm.SADWindowSize*sgbm.SADWindowSize;
@@ -291,6 +298,10 @@ void App::run()
 
     	cout << endl;
     	printParams();
+	//contours
+	vector<Vec4i> hierarchy;
+	Mat dispBin;
+
 
     running = true;
     while (running)
@@ -313,7 +324,7 @@ void App::run()
 	
 		
 		cvtColor(leftTemp, left, CV_BGR2GRAY);
-	    cvtColor(rightTemp, right, CV_BGR2GRAY);
+	   cvtColor(rightTemp, right, CV_BGR2GRAY);
 	    d_left.upload(left);
 	    d_right.upload(right);
 
@@ -322,7 +333,7 @@ void App::run()
 	    imshow("right", right);
 
         workBegin();
-        switch (p.method)
+  /*      switch (p.method)
         {
         case Params::BM:
             if (d_left.channels() > 1 || d_right.channels() > 1)
@@ -341,23 +352,39 @@ void App::run()
         case Params::BP: bp(d_left, d_right, d_disp); break;
         case Params::CSBP: csbp(d_left, d_right, d_disp); break;
         }
+*/
 	
     // 	equalizeHist(left, left);
 //	equalizeHist(right, right);
 	Mat l, r, d;
-	resize(left, l, Size(320, 240));
-	resize(right, r, Size(320, 240));
-	sgbm(l, r, d);
-	resize(d, disp, Size(800, 600), INTER_CUBIC);
-	workEnd();
+	//resize(left, l, Size(320, 240));
+	//resize(right, r, Size(320, 240));
+	sgbm(left, right, disp);
+//	resize(d, disp, Size(800, 600), INTER_CUBIC);
 
         // Show results
 //        d_disp.download(disp);
-        putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
        
 	Mat disp8;
 	disp.convertTo(disp8, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
+		
+	//find contours
+	threshold(disp8, dispBin, 100, 255, THRESH_BINARY);
+
+	findContours(dispBin, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_TC89_L1);
+	//appContours.resize(contours.size());
+	//approxPolyDP(contours[2], appContours, 5, false);
+	contoursImage = Mat(Size(800, 600), CV_8UC3, Scalar(0, 0, 0));
+	for(int c = 0; c < contours.size(); c++) {
+		if (contourArea(contours[c]) > 3000) 
+			 drawContours(contoursImage, contours, c, Scalar(0, 255, 0));
+	}
+	
+	workEnd();
+        putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
+
 	imshow("disparity", disp8);
+	imshow("Contours", contoursImage);
 
         handleKey((char)waitKey(3));
     }
