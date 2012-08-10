@@ -1,0 +1,20 @@
+This is a really easy exampled aimed for those who are just starting to
+program plugins for Unity.
+
+XCodePlugin:
+   This folder contains a XCode project that has C++ Source Code for
+   compiling the plugin in Mac OS.
+VS2008Plugin
+   This folder contains a Visual Studio 2008 project that has C++ Source Code
+   for compiling the pluging in windows.
+Unity Project Plugin:
+   Contains the project to be opened with Unity.
+
+* What the plugin does:
+-> Prints a Number.
+-> Return a string to be seen in Unity.
+-> Add 2 integers and return the operation.
+-> Add 2 floats and return the operation.
+
+The idea of this example is to show how to connect functions with different
+returning datatypes and different parameters to Unity.

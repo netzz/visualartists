@@ -1,0 +1,2 @@
+Writing this to a file.
+Frame 4907 FPS: 29.3012 Middle point is: 5548 320 240
