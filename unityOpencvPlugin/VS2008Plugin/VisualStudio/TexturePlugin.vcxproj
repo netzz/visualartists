@@ -60,10 +60,10 @@
       </PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>EditAndContinue</DebugInformationFormat>
-      <AdditionalIncludeDirectories>$(OPEN_NI_INCLUDE);.;</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(OPENCV_DIR)\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
-      <OutputFile>C:\Projects\SimplestPluginExample\Unity Project Plugin\Assets\Plugins\ASimplePlugin.dll </OutputFile>
+      <OutputFile>C:\Projects\UnityProjects\MoscowHistoryARUnity\Assets\Plugins\CVPlugin.dll</OutputFile>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <ProgramDatabaseFile>$(OutDir)TexturePlugin.pdb</ProgramDatabaseFile>
       <SubSystem>Windows</SubSystem>
@@ -72,8 +72,8 @@
       </DataExecutionPrevention>
       <ImportLibrary>$(OutDir)TexturePlugin.lib</ImportLibrary>
       <TargetMachine>MachineX86</TargetMachine>
-      <AdditionalLibraryDirectories>$(OPEN_NI_LIB);./Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;openNI.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(OPENCV_DIR)\lib;./Libs;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>kernel32.lib;user32.lib;gdi32.lib;winspool.lib;comdlg32.lib;advapi32.lib;shell32.lib;ole32.lib;oleaut32.lib;uuid.lib;odbc32.lib;odbccp32.lib;opencv_core242.lib;opencv_imgproc242.lib;opencv_highgui242.lib;opencv_ml242.lib;opencv_video242.lib;opencv_features2d242.lib;opencv_calib3d242.lib;opencv_objdetect242.lib;opencv_contrib242.lib;opencv_legacy242.lib;opencv_flann242.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
