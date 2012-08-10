@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?><?xml-stylesheet type='text/xsl' href='_UpgradeReport_Files/UpgradeReport.xslt'?><UpgradeLog>
+<Properties><Property Name="Solution" Value="ASimplePlugin">
+</Property><Property Name="Solution File" Value="C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\ASimplePlugin.sln">
+</Property><Property Name="Date" Value="5 августа 2012 г.">
+</Property><Property Name="Time" Value="20:58">
+</Property></Properties><Event ErrorLevel="0" Project="" Source="ASimplePlugin.sln" Description="File successfully backed up as C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\ASimplePlugin.sln.old">
+</Event><Event ErrorLevel="0" Project="TexturePlugin" Source="TexturePlugin.vcproj" Description="Converting project file 'C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\TexturePlugin.vcproj'.">
+</Event><Event ErrorLevel="1" Project="TexturePlugin" Source="TexturePlugin.vcproj" Description="VCWebServiceProxyGeneratorTool is no longer supported. The tool has been removed from your project settings.">
+</Event><Event ErrorLevel="1" Project="TexturePlugin" Source="TexturePlugin.vcproj" Description="Attribute 'Detect64BitPortabilityProblems' of 'VCCLCompilerTool' is not supported in this version and has been removed during conversion.">
+</Event><Event ErrorLevel="1" Project="TexturePlugin" Source="TexturePlugin.vcproj" Description="Attribute 'Detect64BitPortabilityProblems' of 'VCCLCompilerTool' is not supported in this version and has been removed during conversion.">
+</Event><Event ErrorLevel="1" Project="TexturePlugin" Source="TexturePlugin.vcproj" Description="MSB8012: $(TargetName) ('ASimplePlugin') does not match the Linker's OutputFile property value 'build/debug\UnityTexture.dll' ('UnityTexture') in project configuration 'Debug|Win32'. This may cause your project to build incorrectly. To correct this, please make sure that $(TargetName) property value matches the value specified in %(Link.OutputFile).">
+</Event><Event ErrorLevel="1" Project="TexturePlugin" Source="TexturePlugin.vcproj" Description="MSB8012: $(TargetPath) ('C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\build/debug\ASimplePlugin.dll') does not match the Linker's OutputFile property value 'build/debug\UnityTexture.dll' ('C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\build/debug\UnityTexture.dll') in project configuration 'Debug|Win32'. This may cause your project to build incorrectly. To correct this, please make sure that $(TargetPath) property value matches the value specified in %(Link.OutputFile).">
+</Event><Event ErrorLevel="0" Project="TexturePlugin" Source="TexturePlugin.vcproj" Description="Done converting to new project file 'C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\TexturePlugin.vcxproj'.">
+</Event><Event ErrorLevel="3" Project="TexturePlugin" Source="TexturePlugin.vcproj" Description="Converted">
+</Event><Event ErrorLevel="0" Project="" Source="ASimplePlugin.sln" Description="Solution converted successfully">
+</Event><Event ErrorLevel="3" Project="" Source="ASimplePlugin.sln" Description="Converted">
+</Event></UpgradeLog>

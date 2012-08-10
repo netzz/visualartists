@@ -1,0 +1,26 @@
+﻿Build started 06.08.2012 0:55:15.
+     1>Project "C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\TexturePlugin.vcxproj" on node 2 (build target(s)).
+     1>InitializeBuildStatus:
+         Touching "build/debug\ASimplePlugin.unsuccessfulbuild".
+       ClCompile:
+         All outputs are up-to-date.
+       ManifestResourceCompile:
+         All outputs are up-to-date.
+     1>C:\Program Files\MSBuild\Microsoft.Cpp\v4.0\Microsoft.CppBuild.targets(990,5): warning MSB8012: TargetPath(C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\build/debug\ASimplePlugin.dll) does not match the Linker's OutputFile property value (C:\Projects\SimplestPluginExample\Unity Project Plugin\Assets\Plugins\ASimplePlugin.dll). This may cause your project to build incorrectly. To correct this, please make sure that $(OutDir), $(TargetName) and $(TargetExt) property values match the value specified in %(Link.OutputFile).
+       Link:
+         E:\Users\windows\Microsoft Visual Studio 10.0\VC\bin\link.exe /ERRORREPORT:PROMPT /OUT:"C:\Projects\SimplestPluginExample\Unity Project Plugin\Assets\Plugins\ASimplePlugin.dll " /INCREMENTAL /NOLOGO /LIBPATH:"C:\Program Files\OpenNI\Lib" /LIBPATH:./Libs kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib openNI.lib kernel32.lib user32.lib gdi32.lib winspool.lib comdlg32.lib advapi32.lib shell32.lib ole32.lib oleaut32.lib uuid.lib odbc32.lib odbccp32.lib /MANIFEST /ManifestFile:"build/debug\ASimplePlugin.dll.intermediate.manifest" /MANIFESTUAC:"level='asInvoker' uiAccess='false'" /DEBUG /PDB:"build/debug\TexturePlugin.pdb" /SUBSYSTEM:WINDOWS /TLBID:1 /DYNAMICBASE:NO /IMPLIB:"build/debug\TexturePlugin.lib" /MACHINE:X86 /DLL build/debug\ASimplePlugin.dll.embed.manifest.res
+         build/debug\Plugin.obj
+       Manifest:
+         C:\Program Files\Microsoft SDKs\Windows\v7.0A\bin\mt.exe /nologo /verbose /out:"build/debug\ASimplePlugin.dll.embed.manifest" /manifest build/debug\ASimplePlugin.dll.intermediate.manifest
+         All outputs are up-to-date.
+       LinkEmbedManifest:
+         All outputs are up-to-date.
+         TexturePlugin.vcxproj -> C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\build/debug\ASimplePlugin.dll
+       FinalizeBuildStatus:
+         Deleting file "build/debug\ASimplePlugin.unsuccessfulbuild".
+         Touching "build/debug\ASimplePlugin.lastbuildstate".
+     1>Done Building Project "C:\Projects\SimplestPluginExample\VS2008Plugin\VisualStudio\TexturePlugin.vcxproj" (build target(s)).
+
+Build succeeded.
+
+Time Elapsed 00:00:02.45
