@@ -1,0 +1,48 @@
+﻿<Properties>
+  <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
+  <MonoDevelop.Ide.Workbench ActiveDocument="../../../../Downloads/mu_1.00/Unity/Assets/Plugins/JitReceiveTexture.cs">
+    <Files>
+      <File FileName="Assets/Scripts/CharControl.cs" Line="39" Column="11" />
+      <File FileName="Assets/Scripts/obsControl.cs" Line="39" Column="7" />
+      <File FileName="Assets/AstarPathfindingProject/ExampleScenes/ExampleScripts/AIFollow.cs" Line="183" Column="20" />
+      <File FileName="Assets/AstarPathfindingProject/ExampleScenes/ExampleScripts/TargetMover.cs" Line="23" Column="117" />
+      <File FileName="Assets/AstarPathfindingProject/Core/AstarPath.cs" Line="719" Column="79" />
+      <File FileName="Assets/Standard Assets/Character Controllers/Sources/Scripts/ThirdPersonController.js" Line="391" Column="17" />
+      <File FileName="../../../../Downloads/mu_1.00/Unity/Assets/Plugins/JitReceiveTexture.cs" Line="188" Column="24" />
+    </Files>
+    <Pads>
+      <Pad Id="ProjectPad">
+        <State expanded="True">
+          <Node name="Assembly-CSharp" expanded="True">
+            <Node name="Assets" expanded="True">
+              <Node name="AstarPathfindingProject" expanded="True">
+                <Node name="Core" expanded="True" />
+                <Node name="ExampleScenes" expanded="True">
+                  <Node name="ExampleScripts" expanded="True" />
+                </Node>
+              </Node>
+              <Node name="Scripts" expanded="True">
+                <Node name="CharControl.cs" selected="True" />
+              </Node>
+            </Node>
+          </Node>
+          <Node name="Assembly-UnityScript-firstpass" expanded="True">
+            <Node name="Assets" expanded="True">
+              <Node name="Standard Assets" expanded="True">
+                <Node name="Character Controllers" expanded="True">
+                  <Node name="Sources" expanded="True">
+                    <Node name="Scripts" expanded="True" />
+                  </Node>
+                </Node>
+              </Node>
+            </Node>
+          </Node>
+        </State>
+      </Pad>
+    </Pads>
+  </MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.DebuggingService.Breakpoints>
+    <BreakpointStore />
+  </MonoDevelop.Ide.DebuggingService.Breakpoints>
+  <MonoDevelop.Ide.DebuggingService.PinnedWatches />
+</Properties>
