@@ -98,7 +98,7 @@ extern "C"
 
 	void EXPORT_API UnityRenderEvent (int eventID){
 
-		// Draw!
+		// 
 		if (tex_id!=0)
 		{
 			glBindTexture( GL_TEXTURE_2D, tex_id );
@@ -134,7 +134,7 @@ extern "C"
 			glTexImage2D( GL_TEXTURE_2D, 0, GL_RGB, w, h, 0, GL_RGB, GL_UNSIGNED_BYTE, data );
 			delete data;
 		}
-		glDrawArrays (GL_TRIANGLES, 0, 3);
+		
 
 
 	}
@@ -144,7 +144,7 @@ extern "C"
 	}
 	const EXPORT_API char*  StopNI(){
 
-		destroyWindow("window");
+		//destroyWindow("window");
 		return "";
 	}
 

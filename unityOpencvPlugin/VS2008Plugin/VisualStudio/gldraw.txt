@@ -57,7 +57,7 @@
 		glColorPointer (4, GL_UNSIGNED_BYTE, sizeof(verts[0]), &verts[0].color);
 		glEnableClientState (GL_COLOR_ARRAY);
 
-
+		glDrawArrays (GL_TRIANGLES, 0, 3);
 
 			const EXPORT_API int UpdateNI(unsigned char * data ){
 
