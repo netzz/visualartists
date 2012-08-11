@@ -1,0 +1,84 @@
+
+#include <iostream>
+#include <sstream>
+#include <fstream>
+#include <opencv2\core\core.hpp>
+#include <opencv2\highgui\highgui.hpp>
+#include <opencv2\imgproc\imgproc.hpp>
+
+using namespace std;
+
+#define SAMPLE_XML_PATH "./SamplesConfig.xml"
+#define MAX_DEPTH 10000
+#include <string>
+#if (XN_PLATFORM == XN_PLATFORM_WIN32)
+	#include <conio.h>
+	#include <direct.h>	
+#elif (XN_PLATFORM == XN_PLATFORM_LINUX_X86 || XN_PLATFORM == XN_PLATFORM_LINUX_ARM || XN_PLATFORM == XN_PLATFORM_MACOSX)
+	#define _getch() getchar()
+#endif
+
+
+#if _MSC_VER // this is defined when compiling with Visual Studio
+#define EXPORT_API __declspec(dllexport) // Visual Studio needs annotating exported functions with this
+#else
+#define EXPORT_API // XCode does not need annotating exported functions, so define is empty
+#endif
+
+// ------------------------------------------------------------------------
+// Plugin itself
+
+// Link following functions C-style (required for plugins)
+using namespace cv;
+extern "C"
+{
+
+	
+	float g_pDepthHist[MAX_DEPTH];
+	VideoCapture *cap;
+	Mat img;
+
+	const EXPORT_API char*  StartNI(){
+
+		//namedWindow("window");	
+
+	}
+
+		const EXPORT_API void getframe(){
+
+		}
+
+	const EXPORT_API int UpdateNI(unsigned char * data ){
+
+
+
+		// *(cap) >> img;
+		//imshow ("window", img);
+		//ofstream myfile;
+		/*
+		myfile.open ("example.txt");
+		
+		myfile <<  img.size().width << endl;
+		myfile <<  img.size().height << endl;
+
+		myfile.close();
+		*/
+//		uchar *c=img.data;
+	//	memcpy(data, img.data, img.size().width*img.size().height*3);
+	/*		
+		for (int i=0;i<g_depthMD.XRes()*g_depthMD.YRes();i++)
+		{
+			data[i]=pDepthMap[i];
+		}
+
+		return 0;
+		*/
+		return 0;
+	}
+	const EXPORT_API char*  StopNI(){
+
+		destroyWindow("window");
+		return "";
+	}
+
+} // end of export C block

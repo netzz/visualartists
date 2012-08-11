@@ -1,0 +1,79 @@
+	struct MyVertex {
+		float x, y, z;
+		unsigned int color;
+	};
+	MyVertex verts[3] = {
+		{ -0.5f, -0.25f,  0, 0xFFff0000 },
+		{  0.5f, -0.25f,  0, 0xFF00ff00 },
+		{  0,     0.5f ,  0, 0xFF0000ff },
+	};
+	float phi = 100;
+	float cosPhi = cosf(phi);
+	float sinPhi = sinf(phi);
+
+	float worldMatrix[16] = {
+		cosPhi,-sinPhi,0,0,
+		sinPhi,cosPhi,0,0,
+		0,0,1,0,
+		0,0,0.7f,1,
+	};
+	float identityMatrix[16] = {
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		0,0,0,1,
+	};
+	float projectionMatrix[16] = {
+		1,0,0,0,
+		0,1,0,0,
+		0,0,1,0,
+		0,0,0,1,
+	};
+
+
+	// Setup sane graphics state (a helper function above)
+	/*
+			glDisable (GL_CULL_FACE);
+			glDisable (GL_LIGHTING);
+			glDisable (GL_BLEND);
+			glDisable (GL_ALPHA_TEST);
+			glDepthFunc (GL_LEQUAL);
+			glEnable (GL_DEPTH_TEST);
+			glDepthMask (GL_FALSE);
+			*/
+		// Transformation matrices
+		glMatrixMode (GL_MODELVIEW);
+		glLoadMatrixf (worldMatrix);
+		glMatrixMode (GL_PROJECTION);
+		// Tweak the projection matrix a bit to make it match what identity
+		// projection would do in D3D9 case.
+		projectionMatrix[10] = 2.0f;
+		projectionMatrix[14] = -2.0f;
+		glLoadMatrixf (projectionMatrix);
+
+		// Vertex layout
+		glVertexPointer (3, GL_FLOAT, sizeof(verts[0]), &verts[0].x);
+		glEnableClientState (GL_VERTEX_ARRAY);
+		glColorPointer (4, GL_UNSIGNED_BYTE, sizeof(verts[0]), &verts[0].color);
+		glEnableClientState (GL_COLOR_ARRAY);
+
+
+
+			const EXPORT_API int UpdateNI(unsigned char * data ){
+
+		//imshow ("123", img);
+		ofstream myfile;
+		/*
+		myfile.open ("example.txt");
+
+		myfile <<  img.size().width << endl;
+		myfile <<  img.size().height << endl;
+
+		myfile.close();
+		*/
+
+		uchar *c=img.data;
+		memcpy(data, img.data, img.size().width*img.size().height*3);
+
+		return 0;
+	}
