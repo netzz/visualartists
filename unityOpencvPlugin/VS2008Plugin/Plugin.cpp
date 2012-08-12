@@ -54,6 +54,8 @@ private:
 	VideoCapture camera;
 	vector<Rect> peopleBounds;
 
+	int isBoundsNew;
+
 	void updatePeopleBounds()
 	{
 		CascadeClassifier peopleCascadeClassifer;
@@ -78,6 +80,7 @@ private:
 			myfile <<peopleBounds.size() << endl;
 			myfile.close();
 
+			isBoundsNew = 1;
 			//printf("Found: %d\n", peopleBounds.size());
 		}
 	}
@@ -98,6 +101,7 @@ public:
 
 		camera >> frame;
 
+		isBoundsNew = 0;
 		pthread_create(&threadId, NULL, &PeopleDetect::startUpdatePeopleBounds, this);
 	}
 
@@ -120,7 +124,7 @@ public:
 		pthread_join(threadId, NULL);
 	}
 
-	bool updateFrameAndBounds(Mat *eFrame, vector<Rect> *bounds)
+	int updateFrameAndBounds(Mat *eFrame, vector<Rect> *bounds)
 	{
 		//			printf("Update frame\n");
 		camera >> frame;
@@ -128,6 +132,13 @@ public:
 		frame.copyTo(*eFrame);
 
 		*bounds = peopleBounds;
+
+		if (isBoundsNew) {
+			isBoundsNew = 0;
+			return 1;
+		} else {
+			return 0;
+		}
 	}
 };
 
