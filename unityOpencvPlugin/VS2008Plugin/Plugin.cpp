@@ -119,6 +119,7 @@ public:
 	}
 
 
+
 	void stopUpdatePeopleBounds()
 	{
 		pthread_join(threadId, NULL);
