@@ -64,6 +64,7 @@ private:
     bool running;
 
 	VideoCapture leftCamera, rightCamera;
+	VideoWriter disparityVideo;
 	
     Mat map11, map12, map21, map22;
 
@@ -178,6 +179,9 @@ App::App(const Params& params)
 		printf("Fail\n");
 		return;
 	}
+
+	//open file for write disparity
+	disparityVideo.open("disparity.avi", 0/*leftCamera.get(CV_CAP_PROP_FPS)*/, 30.0, Size(800, 600), false);
 
         // loading intrinsic parameters
         FileStorage fs("intrinsics.yml", CV_STORAGE_READ);
@@ -300,7 +304,7 @@ void App::run()
     	printParams();
 	//contours
 	vector<Vec4i> hierarchy;
-	Mat dispBin;
+	Mat dispBin, dispThresh;
 
 
     running = true;
@@ -354,13 +358,13 @@ void App::run()
         }
 */
 	
-    // 	equalizeHist(left, left);
-//	equalizeHist(right, right);
+     	equalizeHist(left, left);
+	equalizeHist(right, right);
 	Mat l, r, d;
-	//resize(left, l, Size(320, 240));
-	//resize(right, r, Size(320, 240));
-	sgbm(left, right, disp);
-//	resize(d, disp, Size(800, 600), INTER_CUBIC);
+	resize(left, l, Size(320, 240));
+	resize(right, r, Size(320, 240));
+	sgbm(l, r, d);
+	resize(d, disp, Size(800, 600), INTER_CUBIC);
 
         // Show results
 //        d_disp.download(disp);
@@ -369,23 +373,25 @@ void App::run()
 	disp.convertTo(disp8, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
 		
 	//find contours
-	threshold(disp8, dispBin, 100, 255, THRESH_BINARY);
+	//threshold(disp8, dispBin, 100, 255, THRESH_BINARY);
 
-	findContours(dispBin, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_TC89_L1);
-	//appContours.resize(contours.size());
-	//approxPolyDP(contours[2], appContours, 5, false);
+	/*//findContours(dispBin, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_TC89_L1);
+	appContours.resize(contours.size());
+	approxPolyDP(contours[2], appContours, 5, false);
 	contoursImage = Mat(Size(800, 600), CV_8UC3, Scalar(0, 0, 0));
 	for(int c = 0; c < contours.size(); c++) {
 		if (contourArea(contours[c]) > 3000) 
 			 drawContours(contoursImage, contours, c, Scalar(0, 255, 0));
 	}
-	
+	*/
 	workEnd();
+	//threshold(disp8, dispThresh, 30, 1, THRESH_TOZERO);
         putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
 
+	
 	imshow("disparity", disp8);
-	imshow("Contours", contoursImage);
-
+//	imshow("Contours", contours);
+	disparityVideo << disp8;
         handleKey((char)waitKey(3));
     }
 }

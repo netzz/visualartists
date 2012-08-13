@@ -30,6 +30,7 @@ int main()
             printf("Ok\n");
             leftCamCap.set(CV_CAP_PROP_FRAME_WIDTH, 800);
             leftCamCap.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+            leftCamCap.set(CV_CAP_PROP_FPS, 30);
 
         } else {
             printf("Fail\n");
@@ -44,6 +45,7 @@ int main()
             printf("Ok\n");
             rightCamCap.set(CV_CAP_PROP_FRAME_WIDTH, 800);
             rightCamCap.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+            rightCamCap.set(CV_CAP_PROP_FPS, 30);
         } else {
             printf("Fail\n");
             return 0;;
