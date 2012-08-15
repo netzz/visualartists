@@ -101,7 +101,7 @@ int main(int argc, char** argv)
 {
     try
     {
-        if (argc < 2)
+        /*if (argc < 2)
         {
             printHelp();
             return 1;
@@ -109,7 +109,8 @@ int main(int argc, char** argv)
         Params args = Params::read(argc, argv);
         if (help_showed)
             return -1;
-        App app(args);
+        */
+		App app(args);
         app.run();
     }
     catch (const exception& e)
@@ -153,7 +154,7 @@ Params Params::read(int argc, char** argv)
 
 
 App::App(const Params& params)
-    : p(params), running(false)
+    : running(false)
 {
     cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
 
@@ -181,7 +182,7 @@ App::App(const Params& params)
 	}
 
 	//open file for write disparity
-	disparityVideo.open("disparity.avi", 0/*leftCamera.get(CV_CAP_PROP_FPS)*/, 30.0, Size(800, 600), false);
+	disparityVideo.open("disparity.avi", -1/*leftCamera.get(CV_CAP_PROP_FPS)*/, 30.0, Size(800, 600), false);
 
         // loading intrinsic parameters
         FileStorage fs("intrinsics.yml", CV_STORAGE_READ);
@@ -276,7 +277,7 @@ void App::run()
     imshow("left", left);
     imshow("right", right);
 
-    // Set common parameters
+    /2/ Set common parameters
     bm.ndisp = p.ndisp;
     bp.ndisp = p.ndisp;
     csbp.ndisp = p.ndisp;
