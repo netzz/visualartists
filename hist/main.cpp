@@ -88,7 +88,7 @@ vector<GesturePoint> GestureFinder::updateFrame(Mat frame)
 	//printf("diffFrame size: %d:%d\n", diffFrame.size().width, diffFrame.size().height);	
 
 	cvtColor(diffFrame, silhouette, CV_BGR2GRAY);
-	threshold(silhouette, silhouette, 65, 200, THRESH_BINARY);
+	threshold(silhouette, silhouette, 35, 200, THRESH_BINARY);
 	//imshow("Silhouette", silhouette);
 
 	//printf("%d:%d %d:%d\n", silhouette.size().width, silhouette.size().height, motionHistory.size().width, motionHistory.size().height);
@@ -108,19 +108,33 @@ vector<GesturePoint> GestureFinder::updateFrame(Mat frame)
 	//imshow("segmask", segmask);
 	
 
+	Mat silhouette3C, silhouette32F;
+	cvtColor(silhouette, silhouette3C, CV_GRAY2RGB);
 	double angle;
 	vector<GesturePoint> gesturePointList;	
 	GesturePoint gesturePoint;
+
+	Mat edges, edges3C;
 	
 	vector<Rect>::iterator bound;
+	//cout << frame.size().width << "x" << frame.size().height << " " << silhouette.size().width << "x"<< silhouette.size().height << endl;
+	//add(frame, silhouette3C, frame);
 	for (bound = motionBoundList.begin(); bound < motionBoundList.end(); bound++) {
 
 		//remove noises
-		if (bound->width * bound->width + bound->height * bound->height < 4000) {
+		if (bound->width * bound->width + bound->height * bound->height < 3000) {
+			continue;
+		}
+	
+		//remove slow motion
+		int count, square;
+		if (count = norm(silhouette(*bound), NORM_L1) / 200 < bound->width * bound->height * 0.1) {
+			cout << "slow motion: " << count << endl;
 			continue;
 		}
 
-		//rectangle(motionHistoryToShow, Point(bound->x, bound->y), Point(bound->x + bound->width, bound->y + bound->height), Scalar(255, 255, 255), 10);
+		//cout << "slow motion: " << norm(silhouette(*bound), NORM_L1) / 200 << endl;
+		//draw last silhouette
 
 		angle = calcGlobalOrientation(orientation(*bound), 
 										correctOrientationMask(*bound), 
@@ -129,16 +143,35 @@ vector<GesturePoint> GestureFinder::updateFrame(Mat frame)
 										600);
 		angle = 360. - angle;
 
-		gesturePoint.x = bound->x;
-		gesturePoint.y = bound->y;
-		gesturePoint.angle = angle;
+		if (angle < 30 or angle > 150) {
+			continue;
+		}
 
+		add(frame(*bound), silhouette3C(*bound), frame(*bound));
+		rectangle(frame, Point(bound->x, bound->y), Point(bound->x + bound->width, bound->y + bound->height), Scalar(0, 255, 0), 2);
+	
+		RotatedRect silhouetteEllipse;
+		//silhouette(*bound).convertTo(silhouette32F, CV_32F);
+		//silhouetteEllipse = fitEllipse(silhouette32F);		
+		
+		//ellipse2Poly(frame(*bound), silhouetteEllipse, Scalar(0, 255, 0), 2);
+
+		gesturePoint.x = bound->x + bound->width / 2;//silhouetteEllipse.center.x;
+		gesturePoint.y = bound->y;// + silhouetteEllipse.center.y;
+		gesturePoint.angle = angle;
+		
+		circle(frame, Point(gesturePoint.x, gesturePoint.y), 10, Scalar(0, 255, 0), 2);
 		gesturePointList.push_back(gesturePoint);
 		
 		cout << (int)angle << " ";
 	}
 	cout << endl;
-	
+					
+		Canny(frame, edges, 50, 200);
+		cvtColor(edges, edges3C, CV_GRAY2BGR);
+		cout << edges.size().width << "x" << edges.size().height << " " << edges3C.channels() << endl;
+		//subtract(frame, edges, edges);
+		frame -= edges3C;
 	//imshow("Motion history", motionHistoryToShow);
 	
 	return gesturePointList;
@@ -301,7 +334,7 @@ int main()
 	camera.open(0);
 	camera.set(CV_CAP_PROP_FRAME_WIDTH, 320);
 	camera.set(CV_CAP_PROP_FRAME_HEIGHT, 240);
-	printf("Camera resolution: %d:%d\n", (int)camera.get(CV_CAP_PROP_FRAME_WIDTH), (int)camera.get(CV_CAP_PROP_FRAME_HEIGHT));	
+	printf("Camera resolution: %d:%d@%d\n", (int)camera.get(CV_CAP_PROP_FRAME_WIDTH), (int)camera.get(CV_CAP_PROP_FRAME_HEIGHT), (int)camera.get(CV_CAP_PROP_FPS));	
 
 	GestureFinder gestureFinder(320, 240);
 
@@ -434,10 +467,10 @@ int main()
 			
 			vector<GesturePoint>::iterator gesturePoint;
 			for (gesturePoint = gesturePointList.begin(); gesturePoint < gesturePointList.end(); gesturePoint++) {
-				root->addChild(getSphere(osg::Vec3d(gesturePoint->x / 100. - 1.6,
-													gesturePoint->y / 100. - 1.2,
-													-3.95), 
-										gesturePoint->angle).get());
+				//root->addChild(getSphere(osg::Vec3d(gesturePoint->x / 100. - 1.6,
+				//									gesturePoint->y / 100. - 1.2,
+				//										-3.95), 
+			//							gesturePoint->angle).get());
 			} 
 
 
