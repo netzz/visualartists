@@ -98,6 +98,9 @@ StereoAnaliser::StereoAnaliser()
 {
     cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
 
+
+	indent = indent2 = 1;
+
 	//Create VideoCaptures
 	printf("Open left camera...");
 	leftCamera.open(0);
@@ -122,9 +125,11 @@ StereoAnaliser::StereoAnaliser()
 	}
 
 	//open file for write disparity
-	disparityVideo.open("disparity.avi", -1/*leftCamera.get(CV_CAP_PROP_FPS)*/, 30.0, Size(800, 600), false);
+	if (!disparityVideo.isOpened()) {
+		disparityVideo.open("/home/user/disparity.avi", CV_FOURCC('X', 'V', 'I', 'D'), 10.0, Size(800, 600));
+	}
 
-        // loading intrinsic parameters
+  /*      // loading intrinsic parameters
         FileStorage fs("intrinsics.yml", CV_STORAGE_READ);
         if(!fs.isOpened())
         {
@@ -159,14 +164,14 @@ StereoAnaliser::StereoAnaliser()
         initUndistortRectifyMap(M1, D1, R1, P1, img_size, CV_16SC2, map11, map12);
         initUndistortRectifyMap(M2, D2, R2, P2, img_size, CV_16SC2, map21, map22);
 	
+*/
 
-
-    bmCpu.state->roi1 = roi1;
-    bmCpu.state->roi2 = roi2;
+    //bmCpu.state->roi1 = roi1;
+    //bmCpu.state->roi2 = roi2;
     bmCpu.state->preFilterCap = 63;
     bmCpu.state->SADWindowSize = 5;
     bmCpu.state->minDisparity = 0;
-    bmCpu.state->numberOfDisparities = ((img_size.width/8) + 15) & -16;
+    bmCpu.state->numberOfDisparities = ((/*img_size.width*/320/8) + 15) & -16;
     bmCpu.state->textureThreshold = 10;
     bmCpu.state->uniquenessRatio = 5;
     bmCpu.state->speckleWindowSize = 100;
@@ -285,7 +290,6 @@ void StereoAnaliser::run()
 	    imshow("right", right);
 
 		cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
-
         workBegin();
   /*      switch (p.method)
         {
@@ -316,8 +320,11 @@ void StereoAnaliser::run()
 	resize(left, l, Size(320, 240));
 	resize(right, r, Size(320, 240));
 	
+
+	cout << "start cpu sgbm" << endl;
 	cpuSgbm(l, r, d);
-	
+	cout << "=" << endl;
+
 	resize(d, disp, Size(800, 600), INTER_CUBIC);
 
         // Show results
@@ -345,13 +352,14 @@ void StereoAnaliser::run()
 	
 	imshow("disparity", disp8);
 //	imshow("Contours", contours);
+	cout << "=" << endl;
 	
 	Mat superposition;
 	addWeighted(disp8(Rect(indent, 0, disp8.size().width - indent, disp8.size().height)), 0.5, 
-									left(Rect(indent2, 0, indent, left.size().height)), 0.5, 1., superposition);
+									left(Rect(indent2, 0, disp8.size().width - indent, left.size().height)), 0.5, 1., superposition);
 	imshow("superposition", superposition);
 	
-	disparityVideo << disp8;
+	//disparityVideo << disp8;
     
 	handleKey((char)waitKey(3));
     }
