@@ -283,7 +283,7 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 
 	
 	imshow("disparity", disp8);
-	//imshow("Contours", contoursImage);
+	imshow("Contours", edges);
 	
 	Mat superposition;
 	addWeighted(disp8(Rect(indent, 0, disp8.size().width - indent, disp8.size().height)), 0.5, 
