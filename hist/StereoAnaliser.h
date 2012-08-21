@@ -76,6 +76,7 @@ private:
 	//countours
 	double _cannyThreshold1, _cannyThreshold2;
 	Mat edges;
+	int _epsilon;
 	int _sobelApertureSize;
 
 	vector <vector<Point> > contourList, appContourList;

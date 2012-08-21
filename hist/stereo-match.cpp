@@ -17,7 +17,7 @@ int main(int argc, char** argv)
         if (help_showed)
             return -1;
         */
-        StereoAnaliser stereoAnaliser(Size(800, 600), 30, 0);
+        StereoAnaliser stereoAnaliser(Size(640, 480), 30, 0);
 		
 		while (waitKey(3) != 27) {
 			stereoAnaliser.updateAndProcessStereoFrames();

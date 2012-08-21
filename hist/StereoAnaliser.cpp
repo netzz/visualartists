@@ -6,8 +6,9 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 		_cannyThreshold1(10),
 		_cannyThreshold2(100),
 		_sobelApertureSize(3),
+		_epsilon(5),
 		_minContourLength(0),
-		_maxContourLength(1000)
+		_maxContourLength(10000)
 {
 	_resolution = resolution;
 	_fps = fps;
@@ -119,7 +120,7 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
     cpuSgbm.speckleWindowSize = bmCpu.state->speckleWindowSize;
     cpuSgbm.speckleRange = bmCpu.state->speckleRange;
     cpuSgbm.disp12MaxDiff = 2;
-    cpuSgbm.fullDP = 0;//alg == STEREO_HH;
+    cpuSgbm.fullDP = 1;//alg == STEREO_HH;
 
 
 cout << "stereo_match_gpu sample\n";
@@ -176,8 +177,8 @@ void StereoAnaliser::updateAndProcessStereoFrames()
    	Mat disp(left.size(), CV_8U);
    	gpu::GpuMat d_disp(left.size(), CV_8U);
 
-   	cout << endl;
-   	printParams();
+   	//cout << endl;
+   	//printParams();
 	
 	//contours
 	Mat dispBin, dispThresh;
@@ -210,10 +211,10 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	d_right.upload(right);
 
 		
-	imshow("left", left);
-	imshow("right", right);
+	//imshow("left", left);
+	//imshow("right", right);
 
-	cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
+	//cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
     workBegin();
   /*      switch (p.method)
         {
@@ -245,7 +246,7 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	resize(right, r, Size(320, 240));
 	
 
-	cout << "start cpu sgbm" << endl;
+	//cout << "start cpu sgbm" << endl;
 	cpuSgbm(l, r, d);
 
 	resize(d, disp, _resolution, INTER_CUBIC);
@@ -262,24 +263,27 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 
 	
 	//Find contours
+	edges = Mat::zeros(_resolution, CV_8U);
 	Canny(disp8, edges, _cannyThreshold1, _cannyThreshold2, _sobelApertureSize);
 
 	findContours(edges, contourList, hierarchy, CV_RETR_LIST, CHAIN_APPROX_TC89_L1);
 	//appContourList.resize(contourList.size());
 
-	contoursImage = Mat(_resolution, CV_8UC3, Scalar(0, 0, 0));
+	contoursImage = Mat(_resolution, CV_8U, Scalar(0, 0, 0));
+	appContourList.clear();
 	vector<Point> appContour;
 	for (size_t c = 0; c < contourList.size(); c++) {
-		approxPolyDP(contourList[c], appContour, 5, false);
+		approxPolyDP(contourList[c], appContour, _epsilon, false);
 		if ((arcLength(appContour, false) > _minContourLength) and (arcLength(appContour, false) < _maxContourLength)) {
 			 appContourList.push_back(appContour);
 		}
 	}
-	drawContours(disp8, appContourList, -1, Scalar(0, 255, 0));
+	cvtColor(edges, edges, CV_GRAY2BGR);
+	drawContours(edges, appContourList, -1, Scalar(0, 255, 0));
 	
 	workEnd();
 	//threshold(disp8, dispThresh, 30, 1, THRESH_TOZERO);
-    putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
+	    putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
 
 	
 	imshow("disparity", disp8);
@@ -288,7 +292,7 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	Mat superposition;
 	addWeighted(disp8(Rect(indent, 0, disp8.size().width - indent, disp8.size().height)), 0.5, 
 									left(Rect(indent2, 0, disp8.size().width - indent, left.size().height)), 0.5, 1., superposition);
-	imshow("superposition", superposition);
+	//imshow("superposition", superposition);
 	
 	//disparityVideo << disp8;
     
@@ -366,10 +370,10 @@ void StereoAnaliser::handleKey(char key)
 		cout << "numberOfDisparities: " << cpuSgbm.numberOfDisparities << endl;
 	break;
 	case '2':
-		cpuSgbm.SADWindowSize += 1;
+		cpuSgbm.SADWindowSize++;
 		cout << "SADWindowSize: " << cpuSgbm.SADWindowSize << endl;
 	case 'w':
-		cpuSgbm.SADWindowSize -= 1;
+		cpuSgbm.SADWindowSize--;
 		cout << "SADWindowSize: " << cpuSgbm.SADWindowSize << endl;
 	break;
 	case '3':
@@ -392,9 +396,11 @@ void StereoAnaliser::handleKey(char key)
 	break;
 	case '6':
 		_minContourLength++;
+		cout << "minContourLength: " << _minContourLength << endl;
 	break;
 	case 'y':
 		_minContourLength--;
+		cout << "minContourLength: " << _minContourLength << endl;
 	break;
 	case '7':
 		_maxContourLength++;
@@ -415,10 +421,58 @@ void StereoAnaliser::handleKey(char key)
 		_cannyThreshold2--;
 	break;
 	case '0':
-		_sobelApertureSize++;
+		_sobelApertureSize += 2;
 	break;
 	case 'p':
-		_sobelApertureSize--;
+		_sobelApertureSize -= 2;
+	break;
+	case 'a':
+		cpuSgbm.disp12MaxDiff++;
+		cout << "disp12MaxDiff: " << cpuSgbm.disp12MaxDiff << endl;
+	break;
+	case 'z':
+		cpuSgbm.disp12MaxDiff--;
+		cout << "disp12MaxDiff: " << cpuSgbm.disp12MaxDiff << endl;
+	break;
+	case 's':
+		cpuSgbm.preFilterCap++;
+		cout << "preFlterCap: " << cpuSgbm.preFilterCap << endl;
+	break;	
+	case 'x':
+		cpuSgbm.preFilterCap--;
+		cout << "preFlterCap: " << cpuSgbm.preFilterCap << endl;
+	break;	
+	case 'd':
+		cpuSgbm.uniquenessRatio++;
+		cout << "uniquenessRatio: " << cpuSgbm.uniquenessRatio << endl;
+	break;
+	case 'c':
+		cpuSgbm.uniquenessRatio--;
+		cout << "uniquenessRatio: " << cpuSgbm.uniquenessRatio << endl;
+	break;
+	case 'f':
+		cpuSgbm.speckleWindowSize++;
+		cout << "speckleWindowSize: " << cpuSgbm.speckleWindowSize << endl;
+	break;
+	case 'v':
+		cpuSgbm.speckleWindowSize--;
+		cout << "speckleWindowSize: " << cpuSgbm.speckleWindowSize << endl;
+	break;
+	case 'g':
+		cpuSgbm.speckleRange++;
+		cout << "speckleRange: " << cpuSgbm.speckleRange << endl;
+	break;
+	case 'b':
+		cpuSgbm.speckleRange--;
+		cout << "speckleRange: " << cpuSgbm.speckleRange << endl;
+	break;
+	case 'h':
+		_epsilon++;
+		cout << "epsilon: " << _epsilon << endl;
+	break;
+	case 'n':
+		_epsilon--;
+		cout << "epsilon: " << _epsilon << endl;
 	break;
 	/*case 'g': case 'G':
         if (left.channels() == 1 && p.method != Params::BM)
