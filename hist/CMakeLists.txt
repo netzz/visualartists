@@ -15,7 +15,7 @@ find_package(OpenCV REQUIRED)
 add_executable(algorithm-list algorithm-list.cpp)
 target_link_libraries(algorithm-list ${OpenCV_LIBS})
 
-add_executable(stereo-match stereo-match.cpp)
+add_executable(stereo-match StereoAnaliser.cpp stereo-match.cpp)
 target_link_libraries(stereo-match ${OpenCV_LIBS})
 
 #add_executable(main main.cpp)
