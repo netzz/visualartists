@@ -13,8 +13,9 @@ using namespace std;
 using namespace cv;
 
 
-struct StereoAnaliser
+class StereoAnaliser
 {
+public:
     StereoAnaliser(Size resolution, int fps = 30, int writeVideoFlag = 0);
 	~StereoAnaliser() { }
 
@@ -73,7 +74,10 @@ private:
 	StereoSGBM cpuSgbm;
 
 	//countours
+	double _cannyThreshold1, _cannyThreshold2;
 	Mat edges;
+	int _sobelApertureSize;
+
 	vector <vector<Point> > contourList, appContourList;
 	vector<Vec4i> hierarchy;
 

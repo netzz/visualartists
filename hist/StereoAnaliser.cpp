@@ -3,6 +3,9 @@
 StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
     : _minDisparity(0),
 		_maxDisparity(255),
+		_cannyThreshold1(10),
+		_cannyThreshold2(100),
+		_sobelApertureSize(3),
 		_minContourLength(0),
 		_maxContourLength(1000)
 {
@@ -259,7 +262,7 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 
 	
 	//Find contours
-	Canny(disp8, edges, 10, 100);
+	Canny(disp8, edges, _cannyThreshold1, _cannyThreshold2, _sobelApertureSize);
 
 	findContours(edges, contourList, hierarchy, CV_RETR_LIST, CHAIN_APPROX_TC89_L1);
 	//appContourList.resize(contourList.size());
@@ -351,7 +354,7 @@ void StereoAnaliser::handleKey(char key)
 	case 27:
       //  running = false;
         break;
-    case 'p': case 'P':
+    case 'P':
         printParams();
         break;
     case '1':
@@ -399,7 +402,24 @@ void StereoAnaliser::handleKey(char key)
 	case 'u':
 		_maxContourLength--;
 	break;
-	
+	case '8':
+		_cannyThreshold1++;
+	break;
+	case 'i':
+		_cannyThreshold1--;
+	break;
+	case '9':
+		_cannyThreshold2++;
+	break;
+	case 'o':
+		_cannyThreshold2--;
+	break;
+	case '0':
+		_sobelApertureSize++;
+	break;
+	case 'p':
+		_sobelApertureSize--;
+	break;
 	/*case 'g': case 'G':
         if (left.channels() == 1 && p.method != Params::BM)
         {
