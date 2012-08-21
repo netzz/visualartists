@@ -15,8 +15,14 @@ using namespace std;
 
 struct StereoAnaliser
 {
-    StereoAnaliser();
-    void run();
+    StereoAnaliser(Size resolution, int fps, int writeVideoFlag = 0);
+
+	float _minDisparity, _maxDisparity;
+	double _minContourLength, _maxContourLength;
+
+	Mat disparityMap;
+
+    void updateAndProcessStereoFrames();
     void handleKey(char key);
     void printParams() const;
 
@@ -36,7 +42,12 @@ struct StereoAnaliser
         return ss.str();
     }
 private:
-    bool running;
+
+	Size _resolution;
+	int _fps;
+
+	int _writeVideoFlag;
+
 
 	VideoCapture leftCamera, rightCamera;
 	VideoWriter disparityVideo;
@@ -55,7 +66,10 @@ private:
 	StereoSGBM cpuSgbm;
 
 	//countours
-	//vector<vector<Point>> contours, appContours;
+	Mat edges;
+	vector <vector<Point> > contourList, appContourList;
+	vector<Vec4i> hierarchy;
+
 	double thresh;
 	Mat contoursImage;
 
@@ -79,10 +93,12 @@ int main(int argc, char** argv)
         if (help_showed)
             return -1;
         */
-        StereoAnaliser stereoAnaliser;
+        StereoAnaliser stereoAnaliser(Size(800, 600), 30);
 		
-		stereoAnaliser.run();
-    }
+		while (waitKey(3) != 27) {
+			stereoAnaliser.updateAndProcessStereoFrames();
+		}
+  	} 
     catch (const exception& e)
     {
         cout << "error: " << e.what() << endl;
@@ -93,10 +109,19 @@ int main(int argc, char** argv)
 
 
 
-StereoAnaliser::StereoAnaliser()
-    : running(false)
+StereoAnaliser::StereoAnaliser(Size resolution,  int fps = 30, int writeVideoFlag)
+    : _minDisparity(0),
+		_maxDisparity(255),
+		_minContourLength(0),
+		_maxContourLength(1000)
 {
-    cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
+	_resolution = resolution;
+	_fps = fps;
+
+	_writeVideoFlag = writeVideoFlag;
+
+	
+	cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
 
 
 	indent = indent2 = 1;
@@ -106,8 +131,9 @@ StereoAnaliser::StereoAnaliser()
 	leftCamera.open(0);
 	if (leftCamera.isOpened()) {
 		printf("Ok\n");
-            leftCamera.set(CV_CAP_PROP_FRAME_WIDTH, 800);
-            leftCamera.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+        leftCamera.set(CV_CAP_PROP_FRAME_WIDTH, _resolution.width);
+        leftCamera.set(CV_CAP_PROP_FRAME_HEIGHT, _resolution.height);
+		leftCamera.set(CV_CAP_PROP_FPS, _fps);
 	} else {
 		printf("Fail\n");
 		return;
@@ -117,17 +143,25 @@ StereoAnaliser::StereoAnaliser()
 	rightCamera.open(1);
 	if (rightCamera.isOpened()) {
 		printf("Ok\n");
-		rightCamera.set(CV_CAP_PROP_FRAME_WIDTH, 800);
-            	rightCamera.set(CV_CAP_PROP_FRAME_HEIGHT, 600);
+		rightCamera.set(CV_CAP_PROP_FRAME_WIDTH, _resolution.width);
+		rightCamera.set(CV_CAP_PROP_FRAME_HEIGHT, _resolution.height);
+		rightCamera.set(CV_CAP_PROP_FPS, _fps);
 	} else {
 		printf("Fail\n");
 		return;
 	}
 
+
+
 	//open file for write disparity
-	if (!disparityVideo.isOpened()) {
-		disparityVideo.open("/home/user/disparity.avi", CV_FOURCC('X', 'V', 'I', 'D'), 10.0, Size(800, 600));
+	if (_writeVideoFlag) 
+	{
+		if (!disparityVideo.isOpened()) {
+			disparityVideo.open("/home/user/disparity.avi", CV_FOURCC('X', 'V', 'I', 'D'), _fps, _resolution);
+		}
 	}
+
+
 
   /*      // loading intrinsic parameters
         FileStorage fs("intrinsics.yml", CV_STORAGE_READ);
@@ -208,7 +242,7 @@ cout << "stereo_match_gpu sample\n";
 }
 
 
-void StereoAnaliser::run()
+void StereoAnaliser::updateAndProcessStereoFrames()
 {
  /*   // Load images
     left_src = imread(p.left);
@@ -245,22 +279,18 @@ void StereoAnaliser::run()
     	//csbp.ndisp = p.ndisp;
 
     	// Prepare disparity map of specified type
-    	Mat disp(left.size(), CV_8U);
-    	gpu::GpuMat d_disp(left.size(), CV_8U);
+   	Mat disp(left.size(), CV_8U);
+   	gpu::GpuMat d_disp(left.size(), CV_8U);
 
-    	cout << endl;
-    	printParams();
+   	cout << endl;
+   	printParams();
 	
 	//contours
-	vector<Vec4i> hierarchy;
 	Mat dispBin, dispThresh;
 
 
-    running = true;
-    while (running)
-    {
-	    leftCamera >> leftSrc;
-	    rightCamera >> rightSrc;
+	leftCamera >> leftSrc;
+	rightCamera >> rightSrc;
 
 		//if (leftSrc.empty()) throw runtime_error("can't retrive left frame \"" + p.left + "\"");
 	    //if (rightSrc.empty()) throw runtime_error("can't retrive right frame \"" + p.right + "\"");
@@ -279,18 +309,18 @@ void StereoAnaliser::run()
 		//cvtColor(leftTemp, left, CV_BGR2GRAY);
 	   //cvtColor(rightTemp, right, CV_BGR2GRAY);
 		
-		cvtColor(leftSrc, left, CV_BGR2GRAY);
-	   cvtColor(rightSrc, right, CV_BGR2GRAY);
+	cvtColor(leftSrc, left, CV_BGR2GRAY);
+	cvtColor(rightSrc, right, CV_BGR2GRAY);
 	    
-		d_left.upload(left);
-	    d_right.upload(right);
+	d_left.upload(left);
+	d_right.upload(right);
 
 		
-	    imshow("left", left);
-	    imshow("right", right);
+	imshow("left", left);
+	imshow("right", right);
 
-		cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
-        workBegin();
+	cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
+    workBegin();
   /*      switch (p.method)
         {
         case Params::BM:
@@ -312,7 +342,7 @@ void StereoAnaliser::run()
         }
 */
 	
-     	equalizeHist(left, left);
+    equalizeHist(left, left);
 	equalizeHist(right, right);
 
 	Mat l, r, d;
@@ -323,9 +353,8 @@ void StereoAnaliser::run()
 
 	cout << "start cpu sgbm" << endl;
 	cpuSgbm(l, r, d);
-	cout << "=" << endl;
 
-	resize(d, disp, Size(800, 600), INTER_CUBIC);
+	resize(d, disp, _resolution, INTER_CUBIC);
 
         // Show results
 //        d_disp.download(disp);
@@ -333,26 +362,34 @@ void StereoAnaliser::run()
 	Mat disp8;
 	disp.convertTo(disp8, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
 		
-	//find contours
-	//threshold(disp8, dispBin, 100, 255, THRESH_BINARY);
+	//do threshold operations
+	threshold(disp8, disp8, _minDisparity, 0., THRESH_TOZERO);
+	threshold(disp8, disp8, _maxDisparity, 0., THRESH_TOZERO_INV);
 
-	/*//findContours(dispBin, contours, hierarchy, RETR_EXTERNAL, CHAIN_APPROX_TC89_L1);
-	appContours.resize(contours.size());
-	approxPolyDP(contours[2], appContours, 5, false);
-	contoursImage = Mat(Size(800, 600), CV_8UC3, Scalar(0, 0, 0));
-	for(int c = 0; c < contours.size(); c++) {
-		if (contourArea(contours[c]) > 3000) 
-			 drawContours(contoursImage, contours, c, Scalar(0, 255, 0));
+	
+	//Find contours
+	Canny(disp8, edges, 10, 100);
+
+	findContours(edges, contourList, hierarchy, CV_RETR_LIST, CHAIN_APPROX_TC89_L1);
+	//appContourList.resize(contourList.size());
+
+	contoursImage = Mat(_resolution, CV_8UC3, Scalar(0, 0, 0));
+	vector<Point> appContour;
+	for (size_t c = 0; c < contourList.size(); c++) {
+		approxPolyDP(contourList[c], appContour, 5, false);
+		if ((arcLength(appContour, false) > _minContourLength) and (arcLength(appContour, false) < _maxContourLength)) {
+			 appContourList.push_back(appContour);
+		}
 	}
-	*/
+	drawContours(disp8, appContourList, -1, Scalar(0, 255, 0));
+	
 	workEnd();
 	//threshold(disp8, dispThresh, 30, 1, THRESH_TOZERO);
     putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
 
 	
 	imshow("disparity", disp8);
-//	imshow("Contours", contours);
-	cout << "=" << endl;
+	//imshow("Contours", contoursImage);
 	
 	Mat superposition;
 	addWeighted(disp8(Rect(indent, 0, disp8.size().width - indent, disp8.size().height)), 0.5, 
@@ -362,7 +399,7 @@ void StereoAnaliser::run()
 	//disparityVideo << disp8;
     
 	handleKey((char)waitKey(3));
-    }
+    
 }
 
 
@@ -397,7 +434,7 @@ void StereoAnaliser::handleKey(char key)
     switch (key)
     {
 	case 27:
-        running = false;
+      //  running = false;
         break;
     case 'p': case 'P':
         printParams();
@@ -418,16 +455,34 @@ void StereoAnaliser::handleKey(char key)
 		cout << "SADWindowSize: " << cpuSgbm.SADWindowSize << endl;
 	break;
 	case '3':
-		indent++;
+		_minDisparity++;
 	break;
 	case 'e':
-		indent--;
+		_minDisparity--;
 	break;
 	case '4':
-		indent2++;
+		_maxDisparity++;
 	break;
 	case 'r':
-		indent2--;
+		_maxDisparity--;
+	break;
+	case '5':
+		_maxDisparity++;
+	break;
+	case 't':
+		_maxDisparity--;
+	break;
+	case '6':
+		_minContourLength++;
+	break;
+	case 'y':
+		_minContourLength--;
+	break;
+	case '7':
+		_maxContourLength++;
+	break;
+	case 'u':
+		_maxContourLength--;
 	break;
 	
 	/*case 'g': case 'G':
