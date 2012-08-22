@@ -3,11 +3,12 @@
 StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
     : _minDisparity(0),
 		_maxDisparity(255),
+		_inpaintRadius(3),
 		_cannyThreshold1(10),
 		_cannyThreshold2(100),
 		_sobelApertureSize(3),
 		_epsilon(5),
-		_minContourLength(0),
+		_minContourLength(100),
 		_maxContourLength(10000)
 {
 	_resolution = resolution;
@@ -49,12 +50,12 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 
 
 	//open file for write disparity
-	if (_writeVideoFlag) 
-	{
-		if (!disparityVideo.isOpened()) {
-			disparityVideo.open("/home/user/disparity.avi", CV_FOURCC('X', 'V', 'I', 'D'), _fps, _resolution);
-		}
-	}
+	//if (1/*_writeVideoFlag*/) 
+	//{
+		//if (!disparityVideo.isOpened()) {
+//			disparityVideo.open("/home/user/disparity.avi", CV_FOURCC('X', 'V', 'I', 'D'), 25, Size(640, 480));
+		//}
+	//}
 
 
 
@@ -136,6 +137,11 @@ cout << "stereo_match_gpu sample\n";
         << "\t4/r - increase/decrease level count (for BP and CSBP only)\n";
 }
 
+StereoAnaliser::~StereoAnaliser()
+{
+	cout << "destruct" << endl;
+	disparityVideo.release();
+}
 
 void StereoAnaliser::updateAndProcessStereoFrames()
 {
@@ -211,8 +217,8 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	d_right.upload(right);
 
 		
-	//imshow("left", left);
-	//imshow("right", right);
+	imshow("left", left);
+	imshow("right", right);
 
 	//cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
     workBegin();
@@ -240,7 +246,7 @@ void StereoAnaliser::updateAndProcessStereoFrames()
     equalizeHist(left, left);
 	equalizeHist(right, right);
 
-	Mat l, r, d;
+	Mat l, r, d, d8, d8t, disp8;
 	
 	resize(left, l, Size(320, 240));
 	resize(right, r, Size(320, 240));
@@ -249,14 +255,24 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	//cout << "start cpu sgbm" << endl;
 	cpuSgbm(l, r, d);
 
-	resize(d, disp, _resolution, INTER_CUBIC);
-
+	d.convertTo(d8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
+	//do inpaint
+	//get mask 
+	Mat inpaintMask, inpaintedDisp;
+	threshold(d8t, inpaintMask, 0, 100, THRESH_BINARY_INV);
+	imshow("inpaintMask", inpaintMask);
+//	inpaint(d8, inpaintMask, d8t, _inpaintRadius, CV_INPAINT_TELEA);
+	resize(d8t, disp8, _resolution, INTER_CUBIC);
         // Show results
 //        d_disp.download(disp);
        
-	Mat disp8;
-	disp.convertTo(disp8, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
-		
+	//Mat disp8, disp8t;
+//	disp.convertTo(disp8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
+	//disparityVideo << disp8;
+	imshow("disp8", disp8);	
+	//inpaintedDisp.copyTo(disp8);
+	//disp8 = disp;
+
 	//do threshold operations
 	threshold(disp8, disp8, _minDisparity, 0., THRESH_TOZERO);
 	threshold(disp8, disp8, _maxDisparity, 0., THRESH_TOZERO_INV);
@@ -273,13 +289,16 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	appContourList.clear();
 	vector<Point> appContour;
 	for (size_t c = 0; c < contourList.size(); c++) {
-		approxPolyDP(contourList[c], appContour, _epsilon, false);
+		/*approxPolyDP(contourList[c], appContour, _epsilon, false);
 		if ((arcLength(appContour, false) > _minContourLength) and (arcLength(appContour, false) < _maxContourLength)) {
 			 appContourList.push_back(appContour);
+		}*/
+		if ((arcLength(contourList[c], true) > _minContourLength)) {// and (arcLength(contourList[c], false) < _maxContourLength)) {
+			 appContourList.push_back(contourList[c]);
 		}
 	}
 	cvtColor(edges, edges, CV_GRAY2BGR);
-	drawContours(edges, appContourList, -1, Scalar(0, 255, 0));
+	drawContours(edges, appContourList, -1, Scalar(255, 255, 255), 4);
 	
 	workEnd();
 	//threshold(disp8, dispThresh, 30, 1, THRESH_TOZERO);
@@ -290,9 +309,10 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	imshow("Contours", edges);
 	
 	Mat superposition;
-	addWeighted(disp8(Rect(indent, 0, disp8.size().width - indent, disp8.size().height)), 0.5, 
-									left(Rect(indent2, 0, disp8.size().width - indent, left.size().height)), 0.5, 1., superposition);
-	//imshow("superposition", superposition);
+	//addWeighted(disp8(Rect(indent, 0, disp8.size().width - indent, disp8.size().height)), 0.5, 
+	//								left(Rect(indent2, 0, disp8.size().width - indent, left.size().height)), 0.5, 1., superposition);
+	addWeighted(edges, 0.5, leftSrc, 0.5, 1., superposition);
+	imshow("superposition", superposition);
 	
 	//disparityVideo << disp8;
     
@@ -389,10 +409,12 @@ void StereoAnaliser::handleKey(char key)
 		_maxDisparity--;
 	break;
 	case '5':
-		_maxDisparity++;
+		_inpaintRadius++;
+		cout << "inpaintRadius: " << _inpaintRadius << endl;
 	break;
 	case 't':
-		_maxDisparity--;
+		_inpaintRadius--;
+		cout << "inpaintRadius: " << _inpaintRadius << endl;
 	break;
 	case '6':
 		_minContourLength++;

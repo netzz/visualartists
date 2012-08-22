@@ -8,6 +8,7 @@
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
+#include "opencv2/photo/photo.hpp"
 
 using namespace std;
 using namespace cv;
@@ -17,7 +18,7 @@ class StereoAnaliser
 {
 public:
     StereoAnaliser(Size resolution, int fps = 30, int writeVideoFlag = 0);
-	~StereoAnaliser() { }
+	~StereoAnaliser();
 
 	float _minDisparity, _maxDisparity;
 	double _minContourLength, _maxContourLength;
@@ -73,6 +74,8 @@ private:
 	StereoBM bmCpu;
 	StereoSGBM cpuSgbm;
 
+	//inpaint
+	double _inpaintRadius;
 	//countours
 	double _cannyThreshold1, _cannyThreshold2;
 	Mat edges;
