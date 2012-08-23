@@ -33,6 +33,7 @@ void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle
 	balloon.position = position;
 	balloon.velocity = velocity;
 	balloon.velocityAngle = velocityAngle;
+	balloon.phase = 0;
 
 	_balloonList.push_back(balloon);
 }

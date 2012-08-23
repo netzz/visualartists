@@ -3,13 +3,18 @@
 
 int main()
 {
+	Size resolution = Size(640, 480);
+
 	VideoCapture camera;
 	Mat frame;
 
 	Balloon balloon;
-	GestureFinder gestureFinder(640, 480);
+	GestureFinder gestureFinder(resolution.width, resolution.height);
 
 	camera.open(0);
+	camera.set(CV_CAP_PROP_FRAME_WIDTH, resolution.width);
+	camera.set(CV_CAP_PROP_FRAME_HEIGHT, resolution.height);
+
 	balloon.load("/tmp/balloon.png", "/tmp/balloon-alpha.png");
 
 
@@ -27,7 +32,7 @@ int main()
 		for (gesturePoint = gesturePointList.begin(); gesturePoint < gesturePointList.end(); gesturePoint++) {
 			balloon.addBalloon(Point(gesturePoint->x, gesturePoint->y), 4, gesturePoint->angle);
 		}
-		balloon.updateBalloons();
+		balloon.updateBalloons(resolution);
 		balloon.drawBalloons(frame);
 
 		imshow("camera", frame);
