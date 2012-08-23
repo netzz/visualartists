@@ -33,8 +33,8 @@ class Balloon
 
 		int load(const string& imageFilename, const string&  alphaChannelFilename);
 		
-		void addBalloon(ImageToMove balloon);
-		void updateBalloons();
+		void addBalloon(Point2f position, double velocity, double velocityAngle);
+		void updateBalloons(Size imageSize = Size(640, 480));
 		void drawBalloons(Mat image);
 	
 };

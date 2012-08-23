@@ -3,7 +3,7 @@
 Mat Balloon::rotateImage(Mat source, double angle)
 {
     Point2f src_center(source.cols/2.0F, source.rows/2.0F);
-	Mat rot_mat = getRotationMatrix2D(src_center, angle, 1.0);
+	Mat rot_mat = getRotationMatrix2D(src_center, 360 - angle, 1.0);
 	Mat dst;
 	warpAffine(source, dst, rot_mat, source.size());
 	
@@ -27,12 +27,17 @@ int Balloon::load(const string& imageFilename, const string& alphaChannelFilenam
 	return 0;
 }
 
-void Balloon::addBalloon(ImageToMove balloon)
+void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle)
 {
+	ImageToMove balloon;
+	balloon.position = position;
+	balloon.velocity = velocity;
+	balloon.velocityAngle = velocityAngle;
+
 	_balloonList.push_back(balloon);
 }
 
-void Balloon::updateBalloons()
+void Balloon::updateBalloons(Size imageSize)
 {
 	vector<ImageToMove>::iterator balloon;
 	for (balloon = _balloonList.begin(); balloon < _balloonList.end(); balloon++) {
@@ -44,8 +49,12 @@ void Balloon::updateBalloons()
 		balloon->velocityAngle = 60 * sin(PI * balloon->phase / 180);
 		float x = balloon->position.x;
 		float y = balloon->position.y;
-		balloon->position = Point(x + balloon->velocity * cos(PI * balloon->velocityAngle / 180),
-									y + balloon->velocity * sin(PI * balloon->velocityAngle / 180)); 
+		balloon->position = Point(x - balloon->velocity * cos(PI * (90 + balloon->velocityAngle) / 180),
+									y - balloon->velocity * sin(PI * (90 + balloon->velocityAngle) / 180)); 
+		if ((balloon->position.x < 0.) or (balloon->position.x + _image.cols > imageSize.width) or
+				(balloon->position.y < 0) or (balloon->position.y + _image.rows > imageSize.height)) {
+			_balloonList.erase(balloon);
+		}
 	}
 }
 
