@@ -146,52 +146,22 @@ StereoAnaliser::~StereoAnaliser()
 void StereoAnaliser::updateAndProcessStereoFrames()
 {
  /*   // Load images
-    left_src = imread(p.left);
-    right_src = imread(p.right);
-    if (left_src.empty()) throw runtime_error("can't open file \"" + p.left + "\"");
-    if (right_src.empty()) throw runtime_error("can't open file \"" + p.right + "\"");
-    cvtColor(left_src, left, CV_BGR2GRAY);
-    cvtColor(right_src, right, CV_BGR2GRAY);
-    d_left.upload(left);
-    d_right.upload(right);
-
-	
-    imshow("left", left);
-    imshow("right", right);
-
-    /2/ Set common parameters
-    gpuBm.ndisp = p.ndisp;
-    bp.ndisp = p.ndisp;
-    csbp.ndisp = p.ndisp;
 
     // Prepare disparity map of specified type
     Mat disp(left.size(), CV_8U);
     gpu::GpuMat d_disp(left.size(), CV_8U);
-
-    cout << endl;
-    printParams();
 */
 	leftCamera >> leftSrc;
 	rightCamera >> rightSrc;
     
-	// Set common parameters
-    	//gpuBm.ndisp = p.ndisp;
-    	//bp.ndisp = p.ndisp;
-    	//csbp.ndisp = p.ndisp;
-
-    	// Prepare disparity map of specified type
+    // Prepare disparity map of specified type
    	Mat disp(left.size(), CV_8U);
    	gpu::GpuMat d_disp(left.size(), CV_8U);
 
-   	//cout << endl;
-   	//printParams();
 	
 	//contours
 	Mat dispBin, dispThresh;
 
-
-	leftCamera >> leftSrc;
-	rightCamera >> rightSrc;
 
 		//if (leftSrc.empty()) throw runtime_error("can't retrive left frame \"" + p.left + "\"");
 	    //if (rightSrc.empty()) throw runtime_error("can't retrive right frame \"" + p.right + "\"");
@@ -255,7 +225,11 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	//cout << "start cpu sgbm" << endl;
 	cpuSgbm(l, r, d);
 
-	d.convertTo(d8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
+	resize(d, _disparityMap, _resolution, INTER_CUBIC);
+	
+
+
+	/*d.convertTo(d8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
 	//do inpaint
 	//get mask 
 	Mat inpaintMask, inpaintedDisp;
@@ -272,15 +246,37 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 	imshow("disp8", disp8);	
 	//inpaintedDisp.copyTo(disp8);
 	//disp8 = disp;
-
-	//do threshold operations
-	threshold(disp8, disp8, _minDisparity, 0., THRESH_TOZERO);
-	threshold(disp8, disp8, _maxDisparity, 0., THRESH_TOZERO_INV);
+	*/
 
 	
+	
+	workEnd();
+	    putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
+
+	
+	imshow("disparity", disp8);
+	imshow("Contours", edges);
+	
+	
+	//disparityVideo << disp8;
+    
+	handleKey((char)waitKey(3));
+    
+}
+
+void StereoAnaliser::filterDepthMap(int min, int max)
+{
+	//do threshold operations
+	threshold(_disparityMap, _disparityMap, min, 0., THRESH_TOZERO);
+	threshold(_disparityMap, _disparityMap, max, 0., THRESH_TOZERO_INV);
+}
+
+void StereoAnaliser::findEdges(double cannyThreshold1, double cannyThreshold2, 
+								double sobelApertureSize, double minContourLength)
+{
 	//Find contours
 	edges = Mat::zeros(_resolution, CV_8U);
-	Canny(disp8, edges, _cannyThreshold1, _cannyThreshold2, _sobelApertureSize);
+	Canny(_disparityMap, edges, cannyThreshold1, cannyThreshold2, sobelApertureSize);
 
 	findContours(edges, contourList, hierarchy, CV_RETR_LIST, CHAIN_APPROX_TC89_L1);
 	//appContourList.resize(contourList.size());
@@ -293,41 +289,38 @@ void StereoAnaliser::updateAndProcessStereoFrames()
 		if ((arcLength(appContour, false) > _minContourLength) and (arcLength(appContour, false) < _maxContourLength)) {
 			 appContourList.push_back(appContour);
 		}*/
-		if ((arcLength(contourList[c], true) > _minContourLength)) {// and (arcLength(contourList[c], false) < _maxContourLength)) {
+		if ((arcLength(contourList[c], true) > minContourLength)) {// and (arcLength(contourList[c], false) < _maxContourLength)) {
 			 appContourList.push_back(contourList[c]);
 		}
 	}
-	cvtColor(edges, edges, CV_GRAY2BGR);
-	drawContours(edges, appContourList, -1, Scalar(255, 255, 255), 4);
-	
-	workEnd();
-	//threshold(disp8, dispThresh, 30, 1, THRESH_TOZERO);
-	    putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
-
-	
-	imshow("disparity", disp8);
-	imshow("Contours", edges);
-	
-	Mat superposition;
-	//addWeighted(disp8(Rect(indent, 0, disp8.size().width - indent, disp8.size().height)), 0.5, 
-	//								left(Rect(indent2, 0, disp8.size().width - indent, left.size().height)), 0.5, 1., superposition);
-	addWeighted(edges, 0.5, leftSrc, 0.5, 1., superposition);
-	imshow("superposition", superposition);
-	
-	//disparityVideo << disp8;
-    
-	handleKey((char)waitKey(3));
-    
 }
 
-Mat StereoAnaliser::getFrame(int drawContour)
+Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour)
 {
+	Mat frame;
+	frame = leftSrc.clone();
+	
 	if (drawContour) {
-		drawContours(_leftFrame, appContourList, -1, Scalar(0, 255, 0));
+		Mat edges3C;
+
+		cvtColor(edges, edges3C, CV_GRAY2BGR);
+		drawContours(edges3C, appContourList, -1, Scalar(255, 255, 255), 4);
+		edges3C.copyTo(frame, edges3C);
 	}
 
-	return _leftFrame;
+	Size inSize = frame.size();
+	Mat tempFrame;
+
+	double fx = frameSize.width / (inSize.width - leftIndent);
+	resize(frame(
+				Rect(leftIndent, 0, inSize.width - leftIndent, inSize.height)), 
+						tempFrame, Size(), fx, fx);
+	int verticalIndent = (tempFrame.size().height - frameSize.height) / 2;
+
+
+	return tempFrame(Rect(0, verticalIndent, frameSize.width, frameSize.height - 2 * verticalIndent));
 }
+
 Mat StereoAnaliser::getMaskedFrame()
 {
 	Mat maskedFrame;

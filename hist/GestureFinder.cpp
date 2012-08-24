@@ -9,7 +9,7 @@ GestureFinder::GestureFinder(int width, int height)
 
 GestureFinder::~GestureFinder() {};
 
-vector<GesturePoint> GestureFinder::updateFrame(Mat frame)
+vector<GesturePoint> GestureFinder::processFrame(Mat frame)
 {
 	if (!previusFrame.data) {
 		previusFrame = frame.clone();
@@ -105,11 +105,11 @@ vector<GesturePoint> GestureFinder::updateFrame(Mat frame)
 	}
 	cout << endl;
 					
-		Canny(frame, edges, 50, 200);
-		cvtColor(edges, edges3C, CV_GRAY2BGR);
-		cout << edges.size().width << "x" << edges.size().height << " " << edges3C.channels() << endl;
+	//	Canny(frame, edges, 50, 200);
+	//	cvtColor(edges, edges3C, CV_GRAY2BGR);
+	//	cout << edges.size().width << "x" << edges.size().height << " " << edges3C.channels() << endl;
 		//subtract(frame, edges, edges);
-		frame -= edges3C;
+		//frame -= edges3C;
 	//imshow("Motion history", motionHistoryToShow);
 	
 	return gesturePointList;

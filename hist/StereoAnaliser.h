@@ -26,7 +26,11 @@ public:
 	Mat disparityMap;
 
     void updateAndProcessStereoFrames();
-	Mat getFrame(int writeContours = 0);
+	void filterDepthMap(int minValue, int maxValue);
+	void findEdges(double cannyThreshold1, double cannyThreshold2, 
+								double sobelApertureSize, double minContourLength);
+	
+	Mat getFrame(Size frameSize, int leftIndent, int writeContours = 0);
 	Mat getMaskedFrame();
 	double getMeanDisparity(Mat mask);
 

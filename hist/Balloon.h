@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <math.h>
+#include <time.h>
 
 #include <opencv2/highgui/highgui.hpp>
 #include <opencv2/imgproc/imgproc.hpp>
@@ -28,7 +29,7 @@ class Balloon
 		Mat rotateImage(Mat image, double angle);
 
 	public:
-		Balloon() {}
+		Balloon();
 		~Balloon() {}
 
 		int load(const string& imageFilename, const string&  alphaChannelFilename);
