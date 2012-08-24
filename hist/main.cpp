@@ -6,16 +6,12 @@ int main()
 {
 	Size resolution = Size(640, 480);
 
-	VideoCapture camera;
 	Mat frame, backgroundFrame;
 
 	Balloon balloon;
 	StereoAnaliser stereoAnaliser(resolution, 30, 0);
 	GestureFinder gestureFinder(resolution.width, resolution.height);
 
-	camera.open(0);
-	camera.set(CV_CAP_PROP_FRAME_WIDTH, resolution.width);
-	camera.set(CV_CAP_PROP_FRAME_HEIGHT, resolution.height);
 
 	balloon.load("/tmp/balloon.png", "/tmp/balloon-alpha.png");
 
@@ -26,13 +22,28 @@ int main()
 
 
 	vector<GesturePoint> gesturePointList;
+	int leftIndent = 10;
+	int minDepth = 0;
+	int maxDepth = 255;
+	int cannyThreshold1 = 10, cannyThreshold2 = 100;
+	int minContourLength = 100;
+
+	createTrackbar("left indent", "", &leftIndent, 100);
+	createTrackbar("min depth", "", &minDepth, 255);
+	createTrackbar("max depth", "", &maxDepth, 255);
+	createTrackbar("canny threshold 1", "", &cannyThreshold1, 100);
+	createTrackbar("canny threshold 2", "", &cannyThreshold2, 1000);
+	createTrackbar("min contour length", "", &minContourLength, 1000);
+
 	while (waitKey(3) != 27) {
 		//camera >> frame;
 
 		stereoAnaliser.updateAndProcessStereoFrames();
-		frame = stereoAnaliser.getFrame(Size(640, 480), 10, false);
-		stereoAnaliser.filterDepthMap(0, 255);
-		stereoAnaliser.findEdges(10, 100, 3, 100);
+		frame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, false);
+		stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+		stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
+		
+		/*
 		//convert to 256
 		Vec3b pixel;
 		for (int i = 0; i < frame.rows; i++) {
@@ -47,7 +58,7 @@ int main()
 				frame.at<Vec3b>(i, j) = pixel;
 			}
 		}
-		
+		*/	
 		//bilateralFilter(frame, cartoonFrame, 5, 900, 900);
 		//imshow("cartoon", cartoonFrame);
 		
