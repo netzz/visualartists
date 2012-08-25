@@ -1,9 +1,13 @@
-#include "StereoAnaliser.h"
+#include <time.h>
 #include "Balloon.h"
 #include "GestureFinder.h"
+#include "StereoAnaliser.h"
 
 int main()
 {
+	srand(time(NULL));
+
+
 	Size resolution = Size(640, 480);
 
 	Mat frame, backgroundFrame;
@@ -27,22 +31,31 @@ int main()
 	int maxDepth = 255;
 	int cannyThreshold1 = 10, cannyThreshold2 = 100;
 	int minContourLength = 100;
-
-	createTrackbar("left indent", "", &leftIndent, 100);
-	createTrackbar("min depth", "", &minDepth, 255);
-	createTrackbar("max depth", "", &maxDepth, 255);
-	createTrackbar("canny threshold 1", "", &cannyThreshold1, 100);
-	createTrackbar("canny threshold 2", "", &cannyThreshold2, 1000);
-	createTrackbar("min contour length", "", &minContourLength, 1000);
+	
+	namedWindow("Trackbars");
+	createTrackbar("left indent", "Trackbars", &leftIndent, 100);
+	createTrackbar("min depth", "Trackbars", &minDepth, 255);
+	createTrackbar("max depth", "Trackbars", &maxDepth, 255);
+	createTrackbar("canny threshold 1", "Trackbars", &cannyThreshold1, 100);
+	createTrackbar("canny threshold 2", "Trackbars", &cannyThreshold2, 1000);
+	createTrackbar("min contour length", "Trackbars", &minContourLength, 1000);
 
 	while (waitKey(3) != 27) {
 		//camera >> frame;
 
-		stereoAnaliser.updateAndProcessStereoFrames();
-		frame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, false);
-		stereoAnaliser.filterDepthMap(minDepth, maxDepth);
-		stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
+	//	cout << "update and process frames" << endl;
+		stereoAnaliser.updateAndProcessStereoFrames(CPU_SGBM);
 		
+	//	cout << "get frame to process" << endl;
+		frame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, false);
+		
+	//	cout << "filter depth map" << endl;
+		stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+
+	//	cout << "find edges" << endl;
+		stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
+
+		imshow("disparity", stereoAnaliser.getDisparityMap());
 		/*
 		//convert to 256
 		Vec3b pixel;
@@ -67,15 +80,16 @@ int main()
 		cvSm(fr, cf, CV_BILATERAL, 0, 0, 100, 100);
 		Mat cr = Mat(cf);
 		imshow("c", cr);*/
-		
+	//	imshow("frame for process", frame);		
 		gesturePointList = gestureFinder.processFrame(frame);
 		
 		vector<GesturePoint>::iterator gesturePoint;
 		for (gesturePoint = gesturePointList.begin(); gesturePoint < gesturePointList.end(); gesturePoint++) {
-			balloon.addBalloon(Point(gesturePoint->x, gesturePoint->y), 4, gesturePoint->angle);
+			cout << "Add balloon: (" << gesturePoint->x <<"; " << gesturePoint->y << ")" << endl;
+			balloon.addBalloon(Point2f(gesturePoint->x, gesturePoint->y), 4 /*8 * rand() % 10 + 2*/, gesturePoint->angle);
 		}
 		
-		backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), 10, true);
+		backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, true);
 		balloon.updateBalloons(resolution);
 		balloon.drawBalloons(backgroundFrame);
 

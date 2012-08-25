@@ -36,15 +36,18 @@ void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle
 {
 	ImageToMove balloon;
 	balloon.position = position;
-	balloon.velocity = (int)(4 * (float)rand() / RAND_MAX);
+	balloon.velocity = velocity;
 	balloon.velocityAngle = velocityAngle;
-	balloon.phase = (180. / PI) * asin(velocityAngle / 60.);
+	balloon.phase = 0;//(180. / PI) * asin(velocityAngle / 60.);
+	//cout << "phase: " << balloon.phase << endl;
 
 	_balloonList.push_back(balloon);
 }
 
 void Balloon::updateBalloons(Size imageSize)
 {
+	vector<ImageToMove> tempBalloonList;
+	int c = _balloonList.size();
 	vector<ImageToMove>::iterator balloon;
 	for (balloon = _balloonList.begin(); balloon < _balloonList.end(); balloon++) {
 		balloon->phase += 4;
@@ -55,14 +58,25 @@ void Balloon::updateBalloons(Size imageSize)
 		balloon->velocityAngle = 60 * sin(PI * balloon->phase / 180);
 		float x = balloon->position.x;
 		float y = balloon->position.y;
+		//cout << x << "x" << y << endl;
 		balloon->position = Point(x - balloon->velocity * cos(PI * (90 + balloon->velocityAngle) / 180),
 									y - balloon->velocity * sin(PI * (90 + balloon->velocityAngle) / 180)); 
-		cout << imageSize.width << " " << imageSize.height << endl;	
+		//cout << "Balloon image size: " << _image.cols << "x" << _image.rows << endl;
+		//cout << /*"Balloon position:*/" (" << balloon->position.x << "; " << balloon->position.y << "; " << balloon->velocity << ")";
+		//cout << "Image size: " << imageSize.width << "x" << imageSize.height << endl;	
 		if ((balloon->position.x < 0.) or (balloon->position.x + (float)_image.cols > (float)imageSize.width) or
 				(balloon->position.y < 0.) or (balloon->position.y + (float)_image.rows > (float)imageSize.height)) {
-			_balloonList.erase(balloon);
+			//_balloonList.erase(balloon);
+			c--;
+			cout << "dropped ";
+		} else {
+			tempBalloonList.push_back(*balloon);
 		}
+		//_balloonList.clear();	
+
 	}
+		//cout << c << "<=>" << tempBalloonList.size() << endl;
+		_balloonList = tempBalloonList;
 }
 
 void Balloon::drawBalloons(Mat image)
@@ -76,8 +90,8 @@ void Balloon::drawBalloons(Mat image)
 					_image.size().width, 
 					_image.size().height);
 //		add(image(bound), balloon->image, image(bound), balloon->alphaChannel);
-		cout << bound.x << " " << bound.y << " " << bound.width << " " << bound.height << endl;
-		cout << _image.cols << " " << _image.rows << endl;
+//		cout << bound.x << " " << bound.y << " " << bound.width << " " << bound.height << endl;
+//		cout << _image.cols << " " << _image.rows << endl;
 		//imshow("bound", image(bound));
 	
 		Mat rotatedImage = rotateImage(_image, balloon->velocityAngle);

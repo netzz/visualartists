@@ -140,127 +140,131 @@ cout << "stereo_match_gpu sample\n";
 StereoAnaliser::~StereoAnaliser()
 {
 	cout << "destruct" << endl;
+	leftCamera.release();
+	rightCamera.release();
 	disparityVideo.release();
 }
 
-void StereoAnaliser::updateAndProcessStereoFrames()
+void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 {
- /*   // Load images
+			    // Prepare disparity map of specified type
+				Mat disp(left.size(), CV_8U);
+				gpu::GpuMat d_disp(left.size(), CV_8U);
+				Mat leftTemp, rightTemp;
+				Mat l, r, d, disparityMap, d8, d8t, disp8;
+	switch(method) {
+		case CPU_SGBM:
+			 /*   // Load images
 
-    // Prepare disparity map of specified type
-    Mat disp(left.size(), CV_8U);
-    gpu::GpuMat d_disp(left.size(), CV_8U);
-*/
-	leftCamera >> leftSrc;
-	rightCamera >> rightSrc;
-    
-    // Prepare disparity map of specified type
-   	Mat disp(left.size(), CV_8U);
-   	gpu::GpuMat d_disp(left.size(), CV_8U);
+			    // Prepare disparity map of specified type
+			    Mat disp(left.size(), CV_8U);
+			    gpu::GpuMat d_disp(left.size(), CV_8U);
+			*/
+				leftCamera >> leftSrc;
+				rightCamera >> rightSrc;
+			    
 
-	
-	//contours
-	Mat dispBin, dispThresh;
+				
+				//if (leftSrc.empty()) throw runtime_error("can't retrive left frame \"" + p.left + "\"");
+				//if (rightSrc.empty()) throw runtime_error("can't retrive right frame \"" + p.right + "\"");
 
+				    
+				//remap(leftSrc, leftTemp, map11, map12, INTER_LINEAR);
+			    //    remap(rightSrc, rightTemp, map21, map22, INTER_LINEAR);
+					
+			//		leftSrc = leftTemp;
+			//		rightSrc = rightTemp;
 
-		//if (leftSrc.empty()) throw runtime_error("can't retrive left frame \"" + p.left + "\"");
-	    //if (rightSrc.empty()) throw runtime_error("can't retrive right frame \"" + p.right + "\"");
+				    
+				
+					
+					//cvtColor(leftTemp, left, CV_BGR2GRAY);
+				   //cvtColor(rightTemp, right, CV_BGR2GRAY);
+					
+				cvtColor(leftSrc, left, CV_BGR2GRAY);
+				cvtColor(rightSrc, right, CV_BGR2GRAY);
+				    
+				d_left.upload(left);
+				d_right.upload(right);
 
-	    
-	Mat leftTemp, rightTemp;
-	//remap(leftSrc, leftTemp, map11, map12, INTER_LINEAR);
-    //    remap(rightSrc, rightTemp, map21, map22, INTER_LINEAR);
-		
-//		leftSrc = leftTemp;
-//		rightSrc = rightTemp;
+					
+				imshow("left", left);
+				imshow("right", right);
 
-	    
-	
-		
-		//cvtColor(leftTemp, left, CV_BGR2GRAY);
-	   //cvtColor(rightTemp, right, CV_BGR2GRAY);
-		
-	cvtColor(leftSrc, left, CV_BGR2GRAY);
-	cvtColor(rightSrc, right, CV_BGR2GRAY);
-	    
-	d_left.upload(left);
-	d_right.upload(right);
+				//cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
+			    workBegin();
+			  /*      switch (p.method)
+				{
+				case Params::BM:
+				    if (d_left.channels() > 1 || d_right.channels() > 1)
+				    {
+					cout << "BM doesn't support color images\n";
+					cvtColor(leftSrc, left, CV_BGR2GRAY);
+					cvtColor(rightSrc, right, CV_BGR2GRAY);
+					cout << "image_channels: " << left.channels() << endl;
+					d_left.upload(left);
+					d_right.upload(right);
+					imshow("left", left);
+					imshow("right", right);
+				    }
+			//            gpuBm(d_left, d_right, d_disp);
+				    break;
+				case Params::BP: bp(d_left, d_right, d_disp); break;
+				case Params::CSBP: csbp(d_left, d_right, d_disp); break;
+				}
+			*/
+				
+			    equalizeHist(left, left);
+				equalizeHist(right, right);
 
-		
-	imshow("left", left);
-	imshow("right", right);
+				
+				resize(left, l, Size(400, 300));
+				resize(right, r, Size(400, 300));
+				
 
-	//cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
-    workBegin();
-  /*      switch (p.method)
-        {
-        case Params::BM:
-            if (d_left.channels() > 1 || d_right.channels() > 1)
-            {
-                cout << "BM doesn't support color images\n";
-                cvtColor(leftSrc, left, CV_BGR2GRAY);
-                cvtColor(rightSrc, right, CV_BGR2GRAY);
-                cout << "image_channels: " << left.channels() << endl;
-                d_left.upload(left);
-                d_right.upload(right);
-                imshow("left", left);
-                imshow("right", right);
-            }
-//            gpuBm(d_left, d_right, d_disp);
-            break;
-        case Params::BP: bp(d_left, d_right, d_disp); break;
-        case Params::CSBP: csbp(d_left, d_right, d_disp); break;
-        }
-*/
-	
-    equalizeHist(left, left);
-	equalizeHist(right, right);
+				//cout << "start cpu sgbm" << endl;
+				cpuSgbm(l, r, d);
 
-	Mat l, r, d, d8, d8t, disp8;
-	
-	resize(left, l, Size(320, 240));
-	resize(right, r, Size(320, 240));
-	
-
-	//cout << "start cpu sgbm" << endl;
-	cpuSgbm(l, r, d);
-
-	resize(d, _disparityMap, _resolution, INTER_CUBIC);
-	
+				resize(d, disparityMap, _resolution, INTER_CUBIC);
+				disparityMap.convertTo(_disparityMap, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
 
 
-	/*d.convertTo(d8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
-	//do inpaint
-	//get mask 
-	Mat inpaintMask, inpaintedDisp;
-	threshold(d8t, inpaintMask, 0, 100, THRESH_BINARY_INV);
-	imshow("inpaintMask", inpaintMask);
-//	inpaint(d8, inpaintMask, d8t, _inpaintRadius, CV_INPAINT_TELEA);
-	resize(d8t, disp8, _resolution, INTER_CUBIC);
-        // Show results
-//        d_disp.download(disp);
-       
-	//Mat disp8, disp8t;
-//	disp.convertTo(disp8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
-	//disparityVideo << disp8;
-	imshow("disp8", disp8);	
-	//inpaintedDisp.copyTo(disp8);
-	//disp8 = disp;
-	*/
-
+				/*d.convertTo(d8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
+				//do inpaint
+				//get mask 
+				Mat inpaintMask, inpaintedDisp;
+				threshold(d8t, inpaintMask, 0, 100, THRESH_BINARY_INV);
+				imshow("inpaintMask", inpaintMask);
+			//	inpaint(d8, inpaintMask, d8t, _inpaintRadius, CV_INPAINT_TELEA);
+				resize(d8t, disp8, _resolution, INTER_CUBIC);
+				// Show results
+			//        d_disp.download(disp);
+			       
+				//Mat disp8, disp8t;
+			//	disp.convertTo(disp8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
+				//disparityVideo << disp8;
+				imshow("disp8", disp8);	
+				//inpaintedDisp.copyTo(disp8);
+				//disp8 = disp;
+				*/
+			break;
+			case KINECT:
+				_disparityMap = freenect_sync_get_depth_cv(0);
+			break;
+		}		
 	
 	
 	workEnd();
-	    putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
+	//    putText(disp, text(), Point(5, 25), FONT_HERSHEY_SIMPLEX, 1.0, Scalar::all(255));
 
 	
-	imshow("disparity", disp8);
-	imshow("Contours", edges);
+	//imshow("disparity", disp8);
+	//imshow("Contours", edges);
 	
 	
 	//disparityVideo << disp8;
     
-	handleKey((char)waitKey(3));
+//	handleKey((char)waitKey(3));
     
 }
 
@@ -295,6 +299,11 @@ void StereoAnaliser::findEdges(double cannyThreshold1, double cannyThreshold2,
 	}
 }
 
+Mat StereoAnaliser::getDisparityMap()
+{
+	return _disparityMap;
+}
+
 Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour)
 {
 	Mat frame;
@@ -310,15 +319,15 @@ Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour)
 
 	Size inSize = frame.size();
 	Mat tempFrame;
-
-	double fx = frameSize.width / (inSize.width - leftIndent);
+	double fx = (double)frameSize.width / ((double)inSize.width - (double)leftIndent);
 	resize(frame(
 				Rect(leftIndent, 0, inSize.width - leftIndent, inSize.height)), 
 						tempFrame, Size(), fx, fx);
 	int verticalIndent = (tempFrame.size().height - frameSize.height) / 2;
 
+	//cout << "fx: " << fx << " " << tempFrame.cols << "x" << tempFrame.rows << " " << verticalIndent  << endl;
 
-	return tempFrame(Rect(0, verticalIndent, frameSize.width, frameSize.height - 2 * verticalIndent));
+	return tempFrame(Rect(0, verticalIndent, frameSize.width, frameSize.height));
 }
 
 Mat StereoAnaliser::getMaskedFrame()

@@ -29,7 +29,7 @@ vector<GesturePoint> GestureFinder::processFrame(Mat frame)
 	threshold(silhouette, silhouette, 35, 200, THRESH_BINARY);
 	//imshow("Silhouette", silhouette);
 
-	//printf("%d:%d %d:%d\n", silhouette.size().width, silhouette.size().height, motionHistory.size().width, motionHistory.size().height);
+//	printf("%d:%d %d:%d\n", silhouette.size().width, silhouette.size().height, motionHistory.size().width, motionHistory.size().height);
 
 	//printf("Currect time, s: %d\n", (int)timestamp);
 	updateMotionHistory(silhouette, motionHistory, timestamp, 600.);
@@ -67,7 +67,7 @@ vector<GesturePoint> GestureFinder::processFrame(Mat frame)
 		//remove slow motion
 		int count, square;
 		if (count = norm(silhouette(*bound), NORM_L1) / 200 < bound->width * bound->height * 0.1) {
-			cout << "slow motion: " << count << endl;
+//			cout << "slow motion: " << count << endl;
 			continue;
 		}
 
@@ -101,9 +101,9 @@ vector<GesturePoint> GestureFinder::processFrame(Mat frame)
 		circle(frame, Point(gesturePoint.x, gesturePoint.y), 10, Scalar(0, 255, 0), 2);
 		gesturePointList.push_back(gesturePoint);
 		
-		cout << (int)angle << " ";
+//		cout << (int)angle << " ";
 	}
-	cout << endl;
+	//cout << endl;
 					
 	//	Canny(frame, edges, 50, 200);
 	//	cvtColor(edges, edges3C, CV_GRAY2BGR);

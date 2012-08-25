@@ -9,10 +9,19 @@
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
 #include "opencv2/photo/photo.hpp"
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include <stdio.h>
+#include "libfreenect/libfreenect_cv.h"
 
 using namespace std;
 using namespace cv;
 
+enum depthMapMethod
+{
+	CPU_SGBM,
+	KINECT
+};
 
 class StereoAnaliser
 {
@@ -25,11 +34,12 @@ public:
 
 	Mat disparityMap;
 
-    void updateAndProcessStereoFrames();
+    void updateAndProcessStereoFrames(depthMapMethod method);
 	void filterDepthMap(int minValue, int maxValue);
 	void findEdges(double cannyThreshold1, double cannyThreshold2, 
 								double sobelApertureSize, double minContourLength);
 	
+	Mat getDisparityMap();
 	Mat getFrame(Size frameSize, int leftIndent, int writeContours = 0);
 	Mat getMaskedFrame();
 	double getMeanDisparity(Mat mask);

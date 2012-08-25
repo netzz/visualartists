@@ -15,11 +15,5 @@ find_package(OpenCV REQUIRED)
 add_executable(algorithm-list algorithm-list.cpp)
 target_link_libraries(algorithm-list ${OpenCV_LIBS})
 
-add_executable(stereo-match StereoAnaliser.cpp stereo-match.cpp)
-target_link_libraries(stereo-match ${OpenCV_LIBS})
-
 add_executable(main StereoAnaliser.cpp Balloon.cpp GestureFinder.cpp main.cpp)
-target_link_libraries(main osg osgViewer ${OpenCV_LIBS})
-
-
-
+target_link_libraries(main freenect freenect_sync freenect_cv ${OpenCV_LIBS})
