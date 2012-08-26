@@ -73,10 +73,13 @@ private:
 	VideoCapture leftCamera, rightCamera;
 	VideoWriter disparityVideo;
 	
-    Mat map11, map12, map21, map22;
-
-    Mat leftSrc, rightSrc;
-    Mat left, right;
+    	Mat map11, map12, map21, map22;
+	
+	//frame with rgb data
+	Mat _frame;
+    
+	Mat leftSrc, rightSrc;
+    	Mat left, right;
 	Mat _leftFrame, _disparityMap;
 
     gpu::GpuMat d_left, d_right;

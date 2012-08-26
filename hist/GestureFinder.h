@@ -31,5 +31,5 @@ class GestureFinder
 		GestureFinder(int width, int height);
 		~GestureFinder();
 
-		vector<GesturePoint> processFrame(Mat frame);
+		vector<GesturePoint> processFrame(Mat frame, int minGestureSquare, float minGestureRatio);
 };

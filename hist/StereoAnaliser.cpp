@@ -27,8 +27,8 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 	leftCamera.open(0);
 	if (leftCamera.isOpened()) {
 		printf("Ok\n");
-        leftCamera.set(CV_CAP_PROP_FRAME_WIDTH, _resolution.width);
-        leftCamera.set(CV_CAP_PROP_FRAME_HEIGHT, _resolution.height);
+		leftCamera.set(CV_CAP_PROP_FRAME_WIDTH, _resolution.width);
+		leftCamera.set(CV_CAP_PROP_FRAME_HEIGHT, _resolution.height);
 		leftCamera.set(CV_CAP_PROP_FPS, _fps);
 	} else {
 		printf("Fail\n");
@@ -46,7 +46,6 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 		printf("Fail\n");
 		return;
 	}
-
 
 
 	//open file for write disparity
@@ -152,6 +151,8 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				gpu::GpuMat d_disp(left.size(), CV_8U);
 				Mat leftTemp, rightTemp;
 				Mat l, r, d, disparityMap, d8, d8t, disp8;
+				Mat kinectDepthMap;
+				double min, max;
 	switch(method) {
 		case CPU_SGBM:
 			 /*   // Load images
@@ -163,7 +164,7 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				leftCamera >> leftSrc;
 				rightCamera >> rightSrc;
 			    
-
+				_frame = leftSrc.clone();
 				
 				//if (leftSrc.empty()) throw runtime_error("can't retrive left frame \"" + p.left + "\"");
 				//if (rightSrc.empty()) throw runtime_error("can't retrive right frame \"" + p.right + "\"");
@@ -214,7 +215,7 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				}
 			*/
 				
-			    equalizeHist(left, left);
+				equalizeHist(left, left);
 				equalizeHist(right, right);
 
 				
@@ -249,7 +250,19 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				*/
 			break;
 			case KINECT:
-				_disparityMap = freenect_sync_get_depth_cv(0);
+				//cout << "take depth map from kinect" << endl;
+				kinectDepthMap = Mat(freenect_sync_get_depth_cv(0));//freenect_sync_get_depth_cv(0);
+
+				kinectDepthMap.convertTo(_disparityMap, CV_8U, 1/5.);
+				_disparityMap = 255 - _disparityMap;
+				
+				cvtColor(_disparityMap, _frame, CV_GRAY2BGR);
+
+				/*minMaxLoc(kinectDepthMap, &min, &max, NULL, NULL);
+				cout << "min: " << min << " max: " << max << endl;
+				//imshow("kinect depth map", _disparityMap);
+				printf("Mean: %f\n", mean(_disparityMap)[0]);*/
+				//waitKey(0);
 			break;
 		}		
 	
@@ -307,7 +320,7 @@ Mat StereoAnaliser::getDisparityMap()
 Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour)
 {
 	Mat frame;
-	frame = leftSrc.clone();
+	frame = _frame.clone();
 	
 	if (drawContour) {
 		Mat edges3C;

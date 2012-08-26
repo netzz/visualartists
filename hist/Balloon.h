@@ -14,8 +14,10 @@ struct ImageToMove
 {
 	Mat image, alphaChannel;
 	Point2f position;
+	double velocityAngle0;
 	double velocityAngle;
 	double velocity;
+	double t;
 	double phase;
 };
 
@@ -34,7 +36,7 @@ class Balloon
 
 		int load(const string& imageFilename, const string&  alphaChannelFilename);
 		
-		void addBalloon(Point2f position, double velocity, double velocityAngle);
+		void addBalloon(Point2f position, double velocity, double velocityAngle, double t);
 		void updateBalloons(Size imageSize = Size(640, 480));
 		void drawBalloons(Mat image);
 	

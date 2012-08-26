@@ -8,7 +8,7 @@ Balloon::Balloon()
 Mat Balloon::rotateImage(Mat source, double angle)
 {
     Point2f src_center(source.cols/2.0F, source.rows/2.0F);
-	Mat rot_mat = getRotationMatrix2D(src_center, 360 - angle, 1.0);
+	Mat rot_mat = getRotationMatrix2D(src_center, angle, 1.0);
 	Mat dst;
 	warpAffine(source, dst, rot_mat, source.size());
 	
@@ -32,12 +32,13 @@ int Balloon::load(const string& imageFilename, const string& alphaChannelFilenam
 	return 0;
 }
 
-void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle)
+void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle, double t)
 {
 	ImageToMove balloon;
-	balloon.position = position;
+	balloon.position = Point2f(position.x - _image.cols / 2, position.y - _image.rows / 2);
 	balloon.velocity = velocity;
-	balloon.velocityAngle = velocityAngle;
+	balloon.velocityAngle0 = velocityAngle;
+	balloon.t = t;
 	balloon.phase = 0;//(180. / PI) * asin(velocityAngle / 60.);
 	//cout << "phase: " << balloon.phase << endl;
 
@@ -55,12 +56,12 @@ void Balloon::updateBalloons(Size imageSize)
 			balloon->phase = 0;
 		}
 
-		balloon->velocityAngle = 60 * sin(PI * balloon->phase / 180);
+		balloon->velocityAngle = 60 * sin(PI * balloon->t * balloon->phase / 180) + balloon->velocityAngle0;
 		float x = balloon->position.x;
 		float y = balloon->position.y;
 		//cout << x << "x" << y << endl;
-		balloon->position = Point(x - balloon->velocity * cos(PI * (90 + balloon->velocityAngle) / 180),
-									y - balloon->velocity * sin(PI * (90 + balloon->velocityAngle) / 180)); 
+		balloon->position = Point(x + balloon->velocity * cos(PI * (balloon->velocityAngle) / 180),
+									y - balloon->velocity * sin(PI * (balloon->velocityAngle) / 180)); 
 		//cout << "Balloon image size: " << _image.cols << "x" << _image.rows << endl;
 		//cout << /*"Balloon position:*/" (" << balloon->position.x << "; " << balloon->position.y << "; " << balloon->velocity << ")";
 		//cout << "Image size: " << imageSize.width << "x" << imageSize.height << endl;	
@@ -94,8 +95,8 @@ void Balloon::drawBalloons(Mat image)
 //		cout << _image.cols << " " << _image.rows << endl;
 		//imshow("bound", image(bound));
 	
-		Mat rotatedImage = rotateImage(_image, balloon->velocityAngle);
-		Mat rotatedAlphaChannel = rotateImage(_alphaChannel, balloon->velocityAngle);
+		Mat rotatedImage = rotateImage(_image, balloon->velocityAngle - 90);
+		Mat rotatedAlphaChannel = rotateImage(_alphaChannel, balloon->velocityAngle - 90);
 		
 		rotatedImage.copyTo(image(bound), rotatedAlphaChannel);
 	}
