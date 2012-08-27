@@ -26,7 +26,7 @@ int main()
 
 
 	int key = 0;
-	depthMapMethod method;
+	depthMapMethod method = KINECT;
 
 	vector<GesturePoint> gesturePointList;
 
@@ -51,7 +51,7 @@ int main()
 
 	namedWindow("Main", CV_WINDOW_NORMAL);
 
-	while (1 != 27) {
+	while (waitKey(3) != 27) {
 		//key = waitKey(9);
 		switch (key) {
 			case 'k':
@@ -68,7 +68,7 @@ int main()
 				}
 			break;
 		}
-		cout << "key" << waitKey(0) & 255 <<  endl; 
+		//cout << "key" << waitKey(1) <<  endl; 
 		
 		switch(method) {
 			case CPU_SGBM:
@@ -90,14 +90,16 @@ int main()
 				//cout << "update and process frames" << endl;
 				stereoAnaliser.updateAndProcessStereoFrames(KINECT);
 		
-				//cout << "get frame to process" << endl;
-				frame = stereoAnaliser.getFrame(Size(640, 480), 0, false);
 
 				//cout << "filter depth map" << endl;
 				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
 
 				//cout << "find edges" << endl;
 				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
+
+				//cout << "get frame to process" << endl;
+				Mat f = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
+				cvtColor(f, frame, CV_GRAY2BGR);
 
 				backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), 0, true);
 			break;
