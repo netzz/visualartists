@@ -11,6 +11,7 @@ int main()
 	Size resolution = Size(640, 480);
 
 	Mat frame, previousFrame, backgroundFrame;
+	Mat edges, edges3C;
 
 	Balloon balloon;
 	StereoAnaliser stereoAnaliser(resolution, 30, 0);
@@ -46,8 +47,8 @@ int main()
 	createTrackbar("canny threshold 1", "Trackbars", &cannyThreshold1, 100);
 	createTrackbar("canny threshold 2", "Trackbars", &cannyThreshold2, 1000);
 	createTrackbar("min contour length", "Trackbars", &minContourLength, 1000);
-	createTrackbar("min gesture square", "Trackbars", &minGestureSquare, 400);
-	createTrackbar("min gesture ration", "Trackbars", &minGestureRatio, 30);
+	createTrackbar("min gesture square", "Trackbars", &minGestureSquare, 200);
+	createTrackbar("min gesture ration", "Trackbars", &minGestureRatio, 15);
 
 
 	namedWindow("Main", CV_WINDOW_NORMAL);
@@ -157,14 +158,14 @@ int main()
 		balloon.updateBalloons(resolution);
 		
 		if (doCartoon) {
-			Canny(frame, edges, 50, 200);
+			Canny(backgroundFrame, edges, 50, 200);
 			cvtColor(edges, edges3C, CV_GRAY2BGR);
-			cout << edges.size().width << "x" << edges.size().height << " " << edges3C.channels() << endl;
-			//subtract(frame, edges, edges);
-			frame -= edges3C;	
-			Mat bFrame;
-			//bilateralFilter(frame, bFrame, 7, 100, 100);
-			//frame = bFrame;
+			//cout << edges.size().width << "x" << edges.size().height << " " << edges3C.channels() << endl;
+			subtract(backgroundFrame, edges3C, backgroundFrame);
+			//backgroundFrame -= edges3C;	
+			//Mat bFrame;
+			//bilateralFilter(backgroundFrame, bFrame, 7, 300, 300);
+			//backgroundFrame = bFrame;
 		}
 
 		balloon.drawBalloons(backgroundFrame);
