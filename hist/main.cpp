@@ -53,7 +53,7 @@ int main()
 
 	while (1 != 27) {
 		//key = waitKey(9);
-		/*switch (key) {
+		switch (key) {
 			case 'k':
 				method = KINECT;
 			break;
@@ -61,20 +61,47 @@ int main()
 				method = CPU_SGBM;
 			break;
 			case 'f': 
-				setWindowProperty("Main", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+				if (getWindowProperty("Main", CV_WND_PROP_FULLSCREEN) == CV_WINDOW_NORMAL) {
+					setWindowProperty("Main", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
+				} else {
+					setWindowProperty("Main", CV_WND_PROP_FULLSCREEN, CV_WINDOW_NORMAL);
+				}
 			break;
-		}*/
+		}
 		cout << "key" << waitKey(0) & 255 <<  endl; 
-		//cout << "update and process frames" << endl;
-		stereoAnaliser.updateAndProcessStereoFrames(KINECT);
 		
-		//cout << "get frame to process" << endl;
-		frame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, false);
-		//cout << "filter depth map" << endl;
-		stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+		switch(method) {
+			case CPU_SGBM:
+				//cout << "update and process frames" << endl;
+				stereoAnaliser.updateAndProcessStereoFrames(CPU_SGBM);
+		
+				//cout << "get frame to process" << endl;
+				frame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, false);
 
-		//cout << "find edges" << endl;
-		stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
+				//cout << "filter depth map" << endl;
+				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+
+				//cout << "find edges" << endl;
+				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
+
+				backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, true);
+			break;
+			case KINECT:
+				//cout << "update and process frames" << endl;
+				stereoAnaliser.updateAndProcessStereoFrames(KINECT);
+		
+				//cout << "get frame to process" << endl;
+				frame = stereoAnaliser.getFrame(Size(640, 480), 0, false);
+
+				//cout << "filter depth map" << endl;
+				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+
+				//cout << "find edges" << endl;
+				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
+
+				backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), 0, true);
+			break;
+		}
 
 		imshow("disparity", stereoAnaliser.getDisparityMap());
 		/*
@@ -110,10 +137,12 @@ int main()
 		vector<GesturePoint>::iterator gesturePoint;
 		for (gesturePoint = gesturePointList.begin(); gesturePoint < gesturePointList.end(); gesturePoint++) {
 			cout << "Add balloon: (" << gesturePoint->x <<"; " << gesturePoint->y << "; " << gesturePoint->angle << ")" << endl;
-			balloon.addBalloon(Point2f(gesturePoint->x, gesturePoint->y), 6 * (float)rand() / RAND_MAX + 4, gesturePoint->angle, 4 * (float)rand() / RAND_MAX - 2);
+			balloon.addBalloon(Point2f(gesturePoint->x, gesturePoint->y), 
+								6 * (float)rand() / RAND_MAX + 4, 
+								gesturePoint->angle, 
+								4 * (float)rand() / RAND_MAX - 2);
 		}
 		
-		backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, true);
 		balloon.updateBalloons(resolution);
 		balloon.drawBalloons(backgroundFrame);
 		//cout << (float)rand() / RAND_MAX << endl;
