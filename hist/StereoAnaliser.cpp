@@ -17,7 +17,7 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 	_writeVideoFlag = writeVideoFlag;
 
 	
-	cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
+	//cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
 
 
 	indent = indent2 = 1;
@@ -185,8 +185,8 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				cvtColor(leftSrc, left, CV_BGR2GRAY);
 				cvtColor(rightSrc, right, CV_BGR2GRAY);
 				    
-				d_left.upload(left);
-				d_right.upload(right);
+				//d_left.upload(left);
+				//d_right.upload(right);
 
 					
 				imshow("left", left);

@@ -10,7 +10,7 @@ int main()
 
 	Size resolution = Size(640, 480);
 
-	Mat frame, backgroundFrame;
+	Mat frame, previousFrame, backgroundFrame;
 
 	Balloon balloon;
 	StereoAnaliser stereoAnaliser(resolution, 30, 0);
@@ -27,6 +27,7 @@ int main()
 
 	int key = 0;
 	depthMapMethod method = KINECT;
+	int doCartoon = 0;
 
 	vector<GesturePoint> gesturePointList;
 
@@ -51,8 +52,8 @@ int main()
 
 	namedWindow("Main", CV_WINDOW_NORMAL);
 
-	while (waitKey(3) != 27) {
-		//key = waitKey(9);
+	while (key != 27) {
+		key = waitKey(3);
 		switch (key) {
 			case 'k':
 				method = KINECT;
@@ -66,6 +67,9 @@ int main()
 				} else {
 					setWindowProperty("Main", CV_WND_PROP_FULLSCREEN, CV_WINDOW_NORMAL);
 				}
+			break;
+			case 'c':
+				doCartoon = !doCartoon;
 			break;
 		}
 		//cout << "key" << waitKey(1) <<  endl; 
@@ -89,17 +93,22 @@ int main()
 			case KINECT:
 				//cout << "update and process frames" << endl;
 				stereoAnaliser.updateAndProcessStereoFrames(KINECT);
-		
 
 				//cout << "filter depth map" << endl;
 				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+				
+				previousFrame = stereoAnaliser.getDisparityMap();
+
+				stereoAnaliser.updateAndProcessStereoFrames(KINECT);
+				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+				Mat f = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
+				f += previousFrame;
+				cvtColor(f, frame, CV_GRAY2BGR);
 
 				//cout << "find edges" << endl;
 				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
 
 				//cout << "get frame to process" << endl;
-				Mat f = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
-				cvtColor(f, frame, CV_GRAY2BGR);
 
 				backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), 0, true);
 			break;
@@ -146,6 +155,18 @@ int main()
 		}
 		
 		balloon.updateBalloons(resolution);
+		
+		if (doCartoon) {
+			Canny(frame, edges, 50, 200);
+			cvtColor(edges, edges3C, CV_GRAY2BGR);
+			cout << edges.size().width << "x" << edges.size().height << " " << edges3C.channels() << endl;
+			//subtract(frame, edges, edges);
+			frame -= edges3C;	
+			Mat bFrame;
+			//bilateralFilter(frame, bFrame, 7, 100, 100);
+			//frame = bFrame;
+		}
+
 		balloon.drawBalloons(backgroundFrame);
 		//cout << (float)rand() / RAND_MAX << endl;
 		imshow("Main", backgroundFrame);
