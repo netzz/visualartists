@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iomanip>
 #include <stdexcept>
-#include "opencv2/gpu/gpu.hpp"
+//#include "opencv2/gpu/gpu.hpp"
 #include "opencv2/highgui/highgui.hpp"
 #include "opencv2/imgproc/imgproc.hpp"
 #include "opencv2/calib3d/calib3d.hpp"
@@ -82,12 +82,12 @@ private:
     	Mat left, right;
 	Mat _leftFrame, _disparityMap;
 
-    gpu::GpuMat d_left, d_right;
+  /*  gpu::GpuMat d_left, d_right;
 
     gpu::StereoBM_GPU gpuBm;
     gpu::StereoBeliefPropagation bp;
     gpu::StereoConstantSpaceBP csbp;
-
+*/
 	StereoBM bmCpu;
 	StereoSGBM cpuSgbm;
 
