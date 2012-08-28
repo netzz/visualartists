@@ -16,7 +16,6 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 
 	_writeVideoFlag = writeVideoFlag;
 
-	
 	//cv::gpu::printShortCudaDeviceInfo(cv::gpu::getDevice());
 
 
@@ -152,6 +151,8 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				Mat l, r, d, disparityMap, d8, d8t, disp8;
 				Mat kinectDepthMap;
 				double min, max;
+				double t;	
+
 	switch(method) {
 		case CPU_SGBM:
 			 /*   // Load images
@@ -160,15 +161,14 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 			    Mat disp(left.size(), CV_8U);
 			    gpu::GpuMat d_disp(left.size(), CV_8U);
 			*/
-cout << "===";
-				leftCamera >> leftSrc;
-				rightCamera >> rightSrc;
+				//leftCamera >> leftSrc;
+				//rightCamera >> rightSrc;
 
-			//leftCamera.grab();
-			//rightCamera.grab();
+			leftCamera.grab();
+			rightCamera.grab();
 			
-			//leftCamera.retrieve(leftSrc);
-			//rightCamera.retrieve(rightSrc);
+			leftCamera.retrieve(leftSrc);
+			rightCamera.retrieve(rightSrc);
 			    
 				_frame = leftSrc.clone();
 				
@@ -225,9 +225,11 @@ cout << "===";
 				equalizeHist(right, right);
 
 				
+				t = (double)getTickCount();
 				resize(left, l, Size(320, 240));
 				resize(right, r, Size(320, 240));
 				
+				cout << "Time to cpuSgbm: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
 				//cout << "start cpu sgbm" << endl;
 				cpuSgbm(l, r, d);
@@ -258,12 +260,13 @@ cout << "===";
 			case KINECT:
 				//cout << "take depth map from kinect" << endl;
 				kinectDepthMap = Mat(freenect_sync_get_depth_cv(0));//freenect_sync_get_depth_cv(0);
+				Mat resizedDepthMap;
+				resize(kinectDepthMap, resizedDepthMap, _resolution);
 
-				kinectDepthMap.convertTo(_disparityMap, CV_8U, 1/5.);
+				resizedDepthMap.convertTo(_disparityMap, CV_8U, 1/5.);
 				_disparityMap = 255 - _disparityMap;
 				
 				cvtColor(_disparityMap, _frame, CV_GRAY2BGR);
-
 				/*minMaxLoc(kinectDepthMap, &min, &max, NULL, NULL);
 				cout << "min: " << min << " max: " << max << endl;
 				//imshow("kinect depth map", _disparityMap);
@@ -329,10 +332,11 @@ Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour)
 	frame = _frame.clone();
 	
 	if (drawContour) {
-		Mat edges3C;
+		Mat edges3C, edges3CBlur;
 
 		cvtColor(edges, edges3C, CV_GRAY2BGR);
 		drawContours(edges3C, appContourList, -1, Scalar(255, 255, 255), 4);
+		//GaussianBlur(edges3C, edges3CBlur, Size(9, 9), 0);
 		edges3C.copyTo(frame, edges3C);
 	}
 

@@ -69,7 +69,7 @@ void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle
 	//cout << "phase: " << balloon.phase << endl;
 	
 	balloon.imageIndex = imageIndex;
-	cout << imageIndex << endl;
+	//cout << imageIndex << endl;
 	_balloonList.push_back(balloon);
 }
 
@@ -96,8 +96,8 @@ void Balloon::updateBalloons(Size imageSize)
 		if ((balloon->position.x < 0.) or (balloon->position.x + (float)_imageList[balloon->imageIndex].cols > (float)imageSize.width) or
 				(balloon->position.y < 0.) or (balloon->position.y + (float)_imageList[balloon->imageIndex].rows > (float)imageSize.height)) {
 			//_balloonList.erase(balloon);
-			c--;
-			cout << "dropped ";
+			//c--;
+			//cout << "dropped ";
 		} else {
 			tempBalloonList.push_back(*balloon);
 		}

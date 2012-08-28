@@ -8,7 +8,9 @@ int main()
 	srand(time(NULL));
 
 
-	Size resolution = Size(640, 480);
+	Size resolution = Size(320, 240);
+
+	double t, mt;
 
 	Mat frame, previousFrame, backgroundFrame;
 	Mat edges, edges3C;
@@ -27,7 +29,7 @@ int main()
 
 
 	int key = 0;
-	depthMapMethod method = KINECT;
+	depthMapMethod method = CPU_SGBM;
 	int doCartoon = 0;
 
 	vector<GesturePoint> gesturePointList;
@@ -51,8 +53,12 @@ int main()
 	createTrackbar("min gesture ration", "Trackbars", &minGestureRatio, 15);
 
 
+	stereoAnaliser.updateAndProcessStereoFrames(KINECT);
+	stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+	previousFrame = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
 
 	while (key != 27) {
+		mt = (double)getTickCount();
 		key = waitKey(3);
 		switch (key) {
 			case 'k':
@@ -77,32 +83,37 @@ int main()
 		switch(method) {
 			case CPU_SGBM:
 				//cout << "update and process frames" << endl;
+				t = (double)getTickCount();
 				stereoAnaliser.updateAndProcessStereoFrames(CPU_SGBM);
+				cout << "Time to get and process frames: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 		
 				//cout << "get frame to process" << endl;
-				frame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, false);
+				frame = stereoAnaliser.getFrame(resolution, leftIndent, false);
 
 				//cout << "filter depth map" << endl;
 				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
 
 				//cout << "find edges" << endl;
+				t = (double)getTickCount();
 				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
+				//cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
-				backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), leftIndent, true);
+				backgroundFrame = stereoAnaliser.getFrame(resolution, leftIndent, true);
 			break;
 			case KINECT:
 				//cout << "update and process frames" << endl;
+				t = (double)getTickCount();
 				stereoAnaliser.updateAndProcessStereoFrames(KINECT);
 
+				cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 				//cout << "filter depth map" << endl;
 				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
 				
-				previousFrame = stereoAnaliser.getDisparityMap();
+				Mat currectFrame = stereoAnaliser.getDisparityMap();
 
-				stereoAnaliser.updateAndProcessStereoFrames(KINECT);
-				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
-				Mat f = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
-				f += previousFrame;
+				//t = (double)getTickCount();
+				Mat f = previousFrame + currectFrame;
+				previousFrame = currectFrame;
 				cvtColor(f, frame, CV_GRAY2BGR);
 
 				//cout << "find edges" << endl;
@@ -110,11 +121,11 @@ int main()
 
 				//cout << "get frame to process" << endl;
 
-				backgroundFrame = stereoAnaliser.getFrame(Size(640, 480), 0, true);
+				backgroundFrame = stereoAnaliser.getFrame(resolution, 0, true);
 			break;
 		}
 
-		imshow("disparity", stereoAnaliser.getDisparityMap());
+		//imshow("disparity", stereoAnaliser.getDisparityMap());
 		/*
 		//convert to 256
 		Vec3b pixel;
@@ -142,12 +153,15 @@ int main()
 	//	imshow("frame for process", frame);		
 		//cout << "process frame for gestures" << endl;
 		//frame = stereoAnaliser.getDisparityMap();
+
+		t = (double)getTickCount();
 		gesturePointList = gestureFinder.processFrame(frame, 100 * minGestureSquare, minGestureRatio / 100.);
-		imshow("processed frame", frame);		
+		//cout << "Time to find gestures: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
+		//imshow("processed frame", frame);		
 
 		vector<GesturePoint>::iterator gesturePoint;
 		for (gesturePoint = gesturePointList.begin(); gesturePoint < gesturePointList.end(); gesturePoint++) {
-			cout << "Add balloon: (" << gesturePoint->x <<"; " << gesturePoint->y << "; " << gesturePoint->angle << ")" << endl;
+			//cout << "Add balloon: (" << gesturePoint->x <<"; " << gesturePoint->y << "; " << gesturePoint->angle << ")" << endl;
 			balloon.addBalloon(Point2f(gesturePoint->x, gesturePoint->y), 
 								6 * (float)rand() / RAND_MAX + 4, 
 								gesturePoint->angle, 
@@ -155,7 +169,9 @@ int main()
 								cvRound(2 * (float)rand() / RAND_MAX));
 		}
 		
+		t = (double)getTickCount();
 		balloon.updateBalloons(resolution);
+		//cout << "Time to update balloons: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 		
 		if (doCartoon) {
 			Canny(backgroundFrame, edges, 50, 200);
@@ -168,8 +184,12 @@ int main()
 			//backgroundFrame = bFrame;
 		}
 
+		t = (double)getTickCount();
 		balloon.drawBalloons(backgroundFrame);
+		//cout << "Time to draw balloons: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 		//cout << (float)rand() / RAND_MAX << endl;
 		imshow("Main", backgroundFrame);
+
+		cout << "Full time: " << 1 / (((double)getTickCount() - mt)/getTickFrequency()) << endl;
 	}
 }
