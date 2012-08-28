@@ -32,7 +32,7 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 		leftCamera.set(CV_CAP_PROP_FPS, _fps);
 	} else {
 		printf("Fail\n");
-//		return;
+		return;
 	}
 
 	printf("Open right camera...");
@@ -44,9 +44,8 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 		rightCamera.set(CV_CAP_PROP_FPS, _fps);
 	} else {
 		printf("Fail\n");
-//		return;
+		return;
 	}
-
 
 	//open file for write disparity
 	//if (1/*_writeVideoFlag*/) 
@@ -122,8 +121,7 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
     cpuSgbm.disp12MaxDiff = 2;
     cpuSgbm.fullDP = 1;//alg == STEREO_HH;
 
-
-cout << "stereo_match_gpu sample\n";
+/*cout << "stereo_match_gpu sample\n";
     cout << "\nControls:\n"
         << "\tesc - exit\n"
         << "\tp - print current parameters\n"
@@ -134,6 +132,7 @@ cout << "stereo_match_gpu sample\n";
         << "\t2/w - increase/decrease window size (for BM only)\n"
         << "\t3/e - increase/decrease iteration count (for BP and CSBP only)\n"
         << "\t4/r - increase/decrease level count (for BP and CSBP only)\n";
+cout << "1111";*/
 }
 
 StereoAnaliser::~StereoAnaliser()
@@ -161,14 +160,15 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 			    Mat disp(left.size(), CV_8U);
 			    gpu::GpuMat d_disp(left.size(), CV_8U);
 			*/
-				//leftCamera >> leftSrc;
-				//rightCamera >> rightSrc;
+cout << "===";
+				leftCamera >> leftSrc;
+				rightCamera >> rightSrc;
 
-			leftCamera.grab();
-			rightCamera.grab();
+			//leftCamera.grab();
+			//rightCamera.grab();
 			
-			leftCamera.retrive(leftSrc);
-			rightCamera.retrive(rightSrc);
+			//leftCamera.retrieve(leftSrc);
+			//rightCamera.retrieve(rightSrc);
 			    
 				_frame = leftSrc.clone();
 				

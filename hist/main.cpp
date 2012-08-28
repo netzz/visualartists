@@ -13,13 +13,13 @@ int main()
 	Mat frame, previousFrame, backgroundFrame;
 	Mat edges, edges3C;
 
+	namedWindow("Main", CV_WINDOW_NORMAL);
 	Balloon balloon;
 	StereoAnaliser stereoAnaliser(resolution, 30, 0);
 	GestureFinder gestureFinder(resolution.width, resolution.height);
 
 
-	balloon.load("../date/balloon.png", "../date/balloon-alpha.png");
-
+	balloon.load();
 
 	/*balloon.addBalloon(Point(200, 200), 2, 40);
 	balloon.addBalloon(Point(100, 200), 6, 80);
@@ -51,7 +51,6 @@ int main()
 	createTrackbar("min gesture ration", "Trackbars", &minGestureRatio, 15);
 
 
-	namedWindow("Main", CV_WINDOW_NORMAL);
 
 	while (key != 27) {
 		key = waitKey(3);
@@ -152,7 +151,8 @@ int main()
 			balloon.addBalloon(Point2f(gesturePoint->x, gesturePoint->y), 
 								6 * (float)rand() / RAND_MAX + 4, 
 								gesturePoint->angle, 
-								4 * (float)rand() / RAND_MAX - 2);
+								4 * (float)rand() / RAND_MAX - 2,
+								cvRound(2 * (float)rand() / RAND_MAX));
 		}
 		
 		balloon.updateBalloons(resolution);

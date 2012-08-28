@@ -15,55 +15,61 @@ Mat Balloon::rotateImage(Mat source, double angle)
 	return dst;
 }
 
-int Balloon::load(const string& imageFilename, const string& alphaChannelFilename)
+int Balloon::load()
 {
-	_imageList[0] = imread(folder + "/balloon-green.png");
+	_imageList.resize(3);
+	_alphaChannelList.resize(3);
+
+	_imageList[0] = imread("/home/user/visualartists/hist/date/balloon-green.png", 1);
 	if (!_imageList[0].data) {
-		cout << "Cannot open image " << folder << "/ballon-green.png" << endl;
+		cout << "Cannot open image /home/user/visualartists/hist/date/ballon-green.png" << endl;
 		return 1;
 	}
 
-	_alphaChannelList[0] = imread(folder + "/balloon-green-alpha.png");
+	_alphaChannelList[0] = imread("../date/balloon-green-alpha.png");
 	if (!_alphaChannelList[0].data) {
-		cout << "Cannot open image " << folder << "/ballon-green-alpha.png" << endl;
-		return 1;
+		cout << "Cannot open image ../date/ballon-green-alpha.png" << endl;
+		return 11;
 	}
 
-	_imageList[0] = imread(folder + "/balloon-green.png");
-	if (!_imageList[0].data) {
-		cout << "Cannot open image " << folder << "/ballon-green.png" << endl;
-		return 1;
+	_imageList[1] = imread("../date/balloon-blue.png");
+	if (!_imageList[1].data) {
+		cout << "Cannot open image ../date/ballon-blue.png" << endl;
+		return 2;
 	}
 
-	_alphaChannelList[0] = imread(folder + "/balloon-green-alpha.png");
-	if (!_alphaChannelList[0].data) {
-		cout << "Cannot open image " << folder << "/ballon-green-alpha.png" << endl;
-		return 1;
+	_alphaChannelList[1] = imread("../date/balloon-blue-alpha.png");
+	if (!_alphaChannelList[1].data) {
+		cout << "Cannot open image ../date/ballon-blue-alpha.png" << endl;
+		return 22;
 	}
-	_imageList[0] = imread(folder + "/balloon-green.png");
-	if (!_imageList[0].data) {
-		cout << "Cannot open image " << folder << "/ballon-green.png" << endl;
-		return 1;
+	_imageList[2] = imread("../date/balloon-red.png");
+	if (!_imageList[2].data) {
+		cout << "Cannot open image ../date/ballon-red.png" << endl;
+		return 3;
 	}
 
-	_alphaChannelList[0] = imread(folder + "/balloon-green-alpha.png");
-	if (!_alphaChannelList[0].data) {
-		cout << "Cannot open image " << folder << "/ballon-green-alpha.png" << endl;
-		return 1;
+	_alphaChannelList[2] = imread("../date/balloon-red-alpha.png");
+	if (!_alphaChannelList[2].data) {
+		cout << "Cannot open image ../date/ballon-red-alpha.png" << endl;
+		return 33;
 	}
+
 	return 0;
 }
 
-void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle, double t)
+void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle, double t, int imageIndex)
 {
 	ImageToMove balloon;
-	balloon.position = Point2f(position.x - _image.cols / 2, position.y - _image.rows / 2);
+	balloon.position = Point2f(position.x - _imageList[imageIndex].cols / 2, position.y - _imageList[imageIndex].rows / 2);
 	balloon.velocity = velocity;
 	balloon.velocityAngle0 = velocityAngle;
 	balloon.t = t;
 	balloon.phase = 0;//(180. / PI) * asin(velocityAngle / 60.);
 	//cout << "phase: " << balloon.phase << endl;
-
+	
+	balloon.imageIndex = imageIndex;
+	cout << imageIndex << endl;
 	_balloonList.push_back(balloon);
 }
 
@@ -87,8 +93,8 @@ void Balloon::updateBalloons(Size imageSize)
 		//cout << "Balloon image size: " << _image.cols << "x" << _image.rows << endl;
 		//cout << /*"Balloon position:*/" (" << balloon->position.x << "; " << balloon->position.y << "; " << balloon->velocity << ")";
 		//cout << "Image size: " << imageSize.width << "x" << imageSize.height << endl;	
-		if ((balloon->position.x < 0.) or (balloon->position.x + (float)_image.cols > (float)imageSize.width) or
-				(balloon->position.y < 0.) or (balloon->position.y + (float)_image.rows > (float)imageSize.height)) {
+		if ((balloon->position.x < 0.) or (balloon->position.x + (float)_imageList[balloon->imageIndex].cols > (float)imageSize.width) or
+				(balloon->position.y < 0.) or (balloon->position.y + (float)_imageList[balloon->imageIndex].rows > (float)imageSize.height)) {
 			//_balloonList.erase(balloon);
 			c--;
 			cout << "dropped ";
@@ -110,15 +116,15 @@ void Balloon::drawBalloons(Mat image)
 	for (balloon = _balloonList.begin(); balloon < _balloonList.end(); balloon++) {
 		bound = Rect(balloon->position.x, 
 					balloon->position.y, 
-					_image.size().width, 
-					_image.size().height);
+					_imageList[balloon->imageIndex].size().width, 
+					_imageList[balloon->imageIndex].size().height);
 //		add(image(bound), balloon->image, image(bound), balloon->alphaChannel);
 //		cout << bound.x << " " << bound.y << " " << bound.width << " " << bound.height << endl;
 //		cout << _image.cols << " " << _image.rows << endl;
 		//imshow("bound", image(bound));
 	
-		Mat rotatedImage = rotateImage(_image, balloon->velocityAngle - 90);
-		Mat rotatedAlphaChannel = rotateImage(_alphaChannel, balloon->velocityAngle - 90);
+		Mat rotatedImage = rotateImage(_imageList[balloon->imageIndex], balloon->velocityAngle - 90);
+		Mat rotatedAlphaChannel = rotateImage(_alphaChannelList[balloon->imageIndex], balloon->velocityAngle - 90);
 		
 		rotatedImage.copyTo(image(bound), rotatedAlphaChannel);
 	}

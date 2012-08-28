@@ -26,7 +26,7 @@ class Balloon
 {
 	private:
 		#define PI 3.14
-		vector<Mat> _image, _alphaChannel;
+		vector<Mat> _imageList, _alphaChannelList;
 		vector<ImageToMove> _balloonList;
 	
 		Mat rotateImage(Mat image, double angle);
@@ -35,9 +35,9 @@ class Balloon
 		Balloon();
 		~Balloon() {}
 
-		int load(const string& imageFilename, const string&  alphaChannelFilename);
+		int load();
 		
-		void addBalloon(Point2f position, double velocity, double velocityAngle, double t);
+		void addBalloon(Point2f position, double velocity, double velocityAngle, double t, int imageIndex);
 		void updateBalloons(Size imageSize = Size(640, 480));
 		void drawBalloons(Mat image);
 	
