@@ -219,8 +219,8 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				equalizeHist(right, right);
 
 				
-				resize(left, l, Size(400, 300));
-				resize(right, r, Size(400, 300));
+				resize(left, l, Size(320, 240));
+				resize(right, r, Size(320, 240));
 				
 
 				//cout << "start cpu sgbm" << endl;

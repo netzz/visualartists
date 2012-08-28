@@ -26,7 +26,7 @@ vector<GesturePoint> GestureFinder::processFrame(Mat frame, int minGestureSquare
 	//printf("diffFrame size: %d:%d\n", diffFrame.size().width, diffFrame.size().height);	
 
 	cvtColor(diffFrame, silhouette, CV_BGR2GRAY);
-	threshold(silhouette, silhouette, 5, 200, THRESH_BINARY);
+	threshold(silhouette, silhouette, 35, 200, THRESH_BINARY);
 	imshow("Silhouette", silhouette);
 
 //	printf("%d:%d %d:%d\n", silhouette.size().width, silhouette.size().height, motionHistory.size().width, motionHistory.size().height);
