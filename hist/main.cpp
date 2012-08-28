@@ -18,7 +18,7 @@ int main()
 	GestureFinder gestureFinder(resolution.width, resolution.height);
 
 
-	balloon.load("/tmp/balloon.png", "/tmp/balloon-alpha.png");
+	balloon.load("../date/balloon.png", "../date/balloon-alpha.png");
 
 
 	/*balloon.addBalloon(Point(200, 200), 2, 40);

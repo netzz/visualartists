@@ -17,18 +17,40 @@ Mat Balloon::rotateImage(Mat source, double angle)
 
 int Balloon::load(const string& imageFilename, const string& alphaChannelFilename)
 {
-	_image = imread(imageFilename, 1);
-	if (!_image.data) {
-		cout << "Cannot open image " << imageFilename << endl;
+	_imageList[0] = imread(folder + "/balloon-green.png");
+	if (!_imageList[0].data) {
+		cout << "Cannot open image " << folder << "/ballon-green.png" << endl;
 		return 1;
 	}
 
-	_alphaChannel = imread(alphaChannelFilename, 0);
-	if (!_alphaChannel.data) {
-		cout << "Cannot open alpha channel " << alphaChannelFilename << endl;
-		return 2;
+	_alphaChannelList[0] = imread(folder + "/balloon-green-alpha.png");
+	if (!_alphaChannelList[0].data) {
+		cout << "Cannot open image " << folder << "/ballon-green-alpha.png" << endl;
+		return 1;
 	}
 
+	_imageList[0] = imread(folder + "/balloon-green.png");
+	if (!_imageList[0].data) {
+		cout << "Cannot open image " << folder << "/ballon-green.png" << endl;
+		return 1;
+	}
+
+	_alphaChannelList[0] = imread(folder + "/balloon-green-alpha.png");
+	if (!_alphaChannelList[0].data) {
+		cout << "Cannot open image " << folder << "/ballon-green-alpha.png" << endl;
+		return 1;
+	}
+	_imageList[0] = imread(folder + "/balloon-green.png");
+	if (!_imageList[0].data) {
+		cout << "Cannot open image " << folder << "/ballon-green.png" << endl;
+		return 1;
+	}
+
+	_alphaChannelList[0] = imread(folder + "/balloon-green-alpha.png");
+	if (!_alphaChannelList[0].data) {
+		cout << "Cannot open image " << folder << "/ballon-green-alpha.png" << endl;
+		return 1;
+	}
 	return 0;
 }
 

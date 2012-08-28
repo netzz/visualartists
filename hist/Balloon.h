@@ -13,6 +13,7 @@ using namespace cv;
 struct ImageToMove
 {
 	Mat image, alphaChannel;
+	int imageIndex;
 	Point2f position;
 	double velocityAngle0;
 	double velocityAngle;
@@ -25,7 +26,7 @@ class Balloon
 {
 	private:
 		#define PI 3.14
-		Mat _image, _alphaChannel;
+		vector<Mat> _image, _alphaChannel;
 		vector<ImageToMove> _balloonList;
 	
 		Mat rotateImage(Mat image, double angle);
