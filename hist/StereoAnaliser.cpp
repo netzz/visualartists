@@ -161,8 +161,14 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 			    Mat disp(left.size(), CV_8U);
 			    gpu::GpuMat d_disp(left.size(), CV_8U);
 			*/
-				leftCamera >> leftSrc;
-				rightCamera >> rightSrc;
+				//leftCamera >> leftSrc;
+				//rightCamera >> rightSrc;
+
+			leftCamera.grab();
+			rightCamera.grab();
+			
+			leftCamera.retrive(leftSrc);
+			rightCamera.retrive(rightSrc);
 			    
 				_frame = leftSrc.clone();
 				
