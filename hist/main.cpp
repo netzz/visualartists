@@ -11,6 +11,7 @@ int main()
 	Size resolution = Size(640, 480);
 
 	Mat frame, previousFrame, backgroundFrame;
+	Mat edges, edges3C;
 
 	Balloon balloon;
 	StereoAnaliser stereoAnaliser(resolution, 30, 0);

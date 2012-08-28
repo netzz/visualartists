@@ -32,7 +32,7 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 		leftCamera.set(CV_CAP_PROP_FPS, _fps);
 	} else {
 		printf("Fail\n");
-		return;
+//		return;
 	}
 
 	printf("Open right camera...");
@@ -44,7 +44,7 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 		rightCamera.set(CV_CAP_PROP_FPS, _fps);
 	} else {
 		printf("Fail\n");
-		return;
+//		return;
 	}
 
 
@@ -148,7 +148,7 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 {
 			    // Prepare disparity map of specified type
 				Mat disp(left.size(), CV_8U);
-				gpu::GpuMat d_disp(left.size(), CV_8U);
+//				gpu::GpuMat d_disp(left.size(), CV_8U);
 				Mat leftTemp, rightTemp;
 				Mat l, r, d, disparityMap, d8, d8t, disp8;
 				Mat kinectDepthMap;
