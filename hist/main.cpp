@@ -72,11 +72,17 @@ int main()
 
 	
 	//Load settings
-	FileStorage settings("settings.yml", FileStorage::WRITE);
+	FileStorage settings("settings.yml", FileStorage::READ);
 	
-//	settings["leftIndent"] >> leftIndent;
-//	settings["miDepth"] >> minDepth;
-//	settings["maxDepth"] >> maxDepth;
+	settings["leftIndent"] >> leftIndent;
+	settings["minDepth"] >> minDepth;
+	settings["maxDepth"] >> maxDepth;
+	settings["diffThresh"] >> diffThreshold;
+	settings["cannyThresh1"] >> cannyThreshold1;
+	settings["cannyThresh2"] >> cannyThreshold2;
+	settings["minContourLen"] >> minContourLength;
+	settings["minGestureSquare"] >> minGestureSquare;
+	settings["minGestureRatio"] >> minGestureRatio;
 
 	
 	namedWindow("Trackbars");
@@ -91,9 +97,9 @@ int main()
 	createTrackbar("min gesture ration", "Trackbars", &minGestureRatio, 15);
 
 
-	stereoAnaliser.updateAndProcessStereoFrames(KINECT);
-	stereoAnaliser.filterDepthMap(minDepth, maxDepth);
-	previousFrame = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
+	//stereoAnaliser.updateAndProcessStereoFrames(KINECT);
+	//stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+	//previousFrame = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
 
 	while (key != 27) {
 		mt = (double)getTickCount();
@@ -134,7 +140,7 @@ int main()
 				//cout << "find edges" << endl;
 				t = (double)getTickCount();
 				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
-				//cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
+				cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
 				backgroundFrame = stereoAnaliser.getFrame(resolution, leftIndent, true);
 			break;
@@ -229,14 +235,24 @@ int main()
 		balloon.drawBalloons(backgroundFrame);
 		//cout << "Time to draw balloons: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 		//cout << (float)rand() / RAND_MAX << endl;
+		
+		t = (double)getTickCount();
 		imshow("Main", backgroundFrame);
 
-		//cout << "Full time: " << 1 / (((double)getTickCount() - mt)/getTickFrequency()) << endl;
+		cout << "Full time: " << 1 / (((double)getTickCount() - t)/getTickFrequency()) << endl;
 	}
 
 	//Save settings
-	settings["leftIndent"] << leftIndent;
-	settings["minDepth"] << minDepth;
+	settings.open("settings.yml", FileStorage::WRITE);
+	settings << "leftIndent" << leftIndent;
+	settings << "minDepth" << minDepth;
+	settings << "maxDepth" << maxDepth;
+	settings << "diffThresh" << diffThreshold;
+	settings << "cannyThresh1" << cannyThreshold1;
+	settings << "cannyThresh2" << cannyThreshold2;
+	settings << "minContourLen" << minContourLength;
+	settings << "minGestureSquare" << minGestureSquare;
+	settings << "minGestureRatio" << minGestureRatio;
 	settings.release();
 
 }

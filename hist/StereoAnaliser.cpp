@@ -250,7 +250,7 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				resize(left, l, Size(320, 240));
 				resize(right, r, Size(320, 240));
 				
-				//cout << "Time to cpuSgbm: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
+				cout << "Time to cpuSgbm: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
 				//cout << "start cpu sgbm" << endl;
 				cpuSgbm(l, r, d);
@@ -279,7 +279,7 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 			break;
 			case KINECT:
 				//cout << "take depth map from kinect" << endl;
-				kinectDepthMap = Mat(freenect_sync_get_depth_cv(0));//freenect_sync_get_depth_cv(0);
+				//kinectDepthMap = Mat(freenect_sync_get_depth_cv(0));//freenect_sync_get_depth_cv(0);
 				Mat resizedDepthMap;
 				resize(kinectDepthMap, resizedDepthMap, _resolution);
 

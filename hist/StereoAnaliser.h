@@ -12,7 +12,7 @@
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include <stdio.h>
-#include "libfreenect/libfreenect_cv.h"
+//#include "libfreenect/libfreenect_cv.h"
 
 using namespace std;
 using namespace cv;
