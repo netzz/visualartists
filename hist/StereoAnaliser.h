@@ -40,7 +40,7 @@ public:
 								double sobelApertureSize, double minContourLength);
 	
 	Mat getDisparityMap();
-	Mat getFrame(Size frameSize, int leftIndent, int writeContours = 0);
+	Mat getFrame(Size frameSize, int leftIndent, int writeContours = 0, int photoIndex = -1);
 	Mat getMaskedFrame();
 	double getMeanDisparity(Mat mask);
 
@@ -106,6 +106,8 @@ private:
 	Mat contoursImage;
 
 	int indent, indent2;
+
+	vector<Mat> _backgroundPhotoList;
 
     int64 work_begin;
     double work_fps;

@@ -41,6 +41,15 @@ int main()
 	int minContourLength = 100;
 	int minGestureSquare = 30;
 	int minGestureRatio = 10;
+
+	
+	//Load settings
+	FileStorage settings("settings.yml", FileStorage::READ);
+	
+	settings["leftIndent"] >> leftIndent;
+	settings["miDepth"] >> minDepth;
+	settings["maxDepth"] >> maxDepth;
+
 	
 	namedWindow("Trackbars");
 	createTrackbar("left indent", "Trackbars", &leftIndent, 100);
@@ -192,4 +201,10 @@ int main()
 
 		cout << "Full time: " << 1 / (((double)getTickCount() - mt)/getTickFrequency()) << endl;
 	}
+
+	//Save settings
+	settings["leftIndent"] << leftIndent;
+
+	settings.release();
+
 }

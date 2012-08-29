@@ -132,6 +132,10 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
         << "\t3/e - increase/decrease iteration count (for BP and CSBP only)\n"
         << "\t4/r - increase/decrease level count (for BP and CSBP only)\n";
 cout << "1111";*/
+
+
+	//Load background photos
+	_backgroundPhotoList.push_back(imread("day1.png"));	
 }
 
 StereoAnaliser::~StereoAnaliser()
@@ -326,10 +330,16 @@ Mat StereoAnaliser::getDisparityMap()
 	return _disparityMap;
 }
 
-Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour)
+Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour, int photoIndex)
 {
 	Mat frame;
-	frame = _frame.clone();
+	if (photoIndex >= 0) {
+		frame = _backgroundPhotoList[photoIndex].clone();
+	} else {		
+		frame = _frame.clone();
+	}
+
+
 	
 	if (drawContour) {
 		Mat edges3C, edges3CBlur;
