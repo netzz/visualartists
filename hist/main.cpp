@@ -18,7 +18,7 @@ int getBackgroundPhotoIndex()
 	struct tm * now = localtime(&t);
 
 	if ((now->tm_sec - time0 > 2) or (now->tm_sec - time0 < 0)) {
-		if (now->tm_hour < 20) {
+		if (now->tm_hour > 20) {
 			index = cvRound((3 * (float)rand() / RAND_MAX));
 		} else {
 			index = 4 + cvRound((3 * (float)rand() / RAND_MAX));
