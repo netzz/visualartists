@@ -361,7 +361,7 @@ Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour, in
 		Mat edges3C, edges3CBlur;
 
 		cvtColor(edges, edges3C, CV_GRAY2BGR);
-		drawContours(edges3C, appContourList, -1, Scalar(5, 5, 5), 4);
+		drawContours(edges3C, appContourList, -1, Scalar(255, 255, 255), 4);
 		//GaussianBlur(edges3C, edges3CBlur, Size(9, 9), 0);
 		edges3C.copyTo(frame, edges3C);
 		imshow("edges3C", edges3C);

@@ -92,7 +92,7 @@ void Balloon::updateBalloons(Size imageSize)
 		//cout << x << "x" << y << endl;
 		double k = ((double)getTickCount() - balloon->updateTick) / getTickFrequency();
 		k = k / 0.08;
-		cout << "k: " << k << endl;
+		//cout << "k: " << k << endl;
 		
 		balloon->updateTick = (double)getTickCount();
 		balloon->position = Point(x + balloon->velocity * k * cos(PI * (balloon->velocityAngle) / 180),

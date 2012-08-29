@@ -12,12 +12,12 @@ int getBackgroundPhotoIndex()
 	static int time0 = 0;
 	static int index = 0;
 
-	//cout << "time0: " << time0 << endl;
+	cout << "time0: " << time0 << endl;
 	
 	time_t t = time(NULL);
 	struct tm * now = localtime(&t);
 
-	if (now->tm_sec - time0 > 2) {
+	if ((now->tm_sec - time0 > 2) or (now->tm_sec - time0 < 0)) {
 		if (now->tm_hour < 20) {
 			index = cvRound((3 * (float)rand() / RAND_MAX));
 		} else {
@@ -26,7 +26,7 @@ int getBackgroundPhotoIndex()
 		time0 = now->tm_sec;
 	}
 
-	//cout << "index: " << index << endl;
+	cout << "index: " << index << endl;
 	return index;
 }
 
