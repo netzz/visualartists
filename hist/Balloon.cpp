@@ -68,6 +68,8 @@ void Balloon::addBalloon(Point2f position, double velocity, double velocityAngle
 	balloon.phase = 0;//(180. / PI) * asin(velocityAngle / 60.);
 	//cout << "phase: " << balloon.phase << endl;
 	
+	balloon.updateTick = getTickCount();
+
 	balloon.imageIndex = imageIndex;
 	//cout << imageIndex << endl;
 	_balloonList.push_back(balloon);
@@ -88,8 +90,13 @@ void Balloon::updateBalloons(Size imageSize)
 		float x = balloon->position.x;
 		float y = balloon->position.y;
 		//cout << x << "x" << y << endl;
-		balloon->position = Point(x + balloon->velocity * cos(PI * (balloon->velocityAngle) / 180),
-									y - balloon->velocity * sin(PI * (balloon->velocityAngle) / 180)); 
+		double k = ((double)getTickCount() - balloon->updateTick) / getTickFrequency();
+		k = k / 0.08;
+		cout << "k: " << k << endl;
+		
+		balloon->updateTick = (double)getTickCount();
+		balloon->position = Point(x + balloon->velocity * k * cos(PI * (balloon->velocityAngle) / 180),
+									y - balloon->velocity * k * sin(PI * (balloon->velocityAngle) / 180)); 
 		//cout << "Balloon image size: " << _image.cols << "x" << _image.rows << endl;
 		//cout << /*"Balloon position:*/" (" << balloon->position.x << "; " << balloon->position.y << "; " << balloon->velocity << ")";
 		//cout << "Image size: " << imageSize.width << "x" << imageSize.height << endl;	

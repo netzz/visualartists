@@ -3,6 +3,33 @@
 #include "GestureFinder.h"
 #include "StereoAnaliser.h"
 
+
+using namespace std;
+
+
+int getBackgroundPhotoIndex()
+{
+	static int time0 = 0;
+	static int index = 0;
+
+	//cout << "time0: " << time0 << endl;
+	
+	time_t t = time(NULL);
+	struct tm * now = localtime(&t);
+
+	if (now->tm_sec - time0 > 2) {
+		if (now->tm_hour < 20) {
+			index = cvRound((3 * (float)rand() / RAND_MAX));
+		} else {
+			index = 4 + cvRound((3 * (float)rand() / RAND_MAX));
+		}
+		time0 = now->tm_sec;
+	}
+
+	//cout << "index: " << index << endl;
+	return index;
+}
+
 int main()
 {
 	srand(time(NULL));
@@ -37,6 +64,7 @@ int main()
 	int leftIndent = 10;
 	int minDepth = 0;
 	int maxDepth = 255;
+	int diffThreshold = 30;
 	int cannyThreshold1 = 10, cannyThreshold2 = 100;
 	int minContourLength = 100;
 	int minGestureSquare = 30;
@@ -44,17 +72,18 @@ int main()
 
 	
 	//Load settings
-	FileStorage settings("settings.yml", FileStorage::READ);
+	FileStorage settings("settings.yml", FileStorage::WRITE);
 	
-	settings["leftIndent"] >> leftIndent;
-	settings["miDepth"] >> minDepth;
-	settings["maxDepth"] >> maxDepth;
+//	settings["leftIndent"] >> leftIndent;
+//	settings["miDepth"] >> minDepth;
+//	settings["maxDepth"] >> maxDepth;
 
 	
 	namedWindow("Trackbars");
 	createTrackbar("left indent", "Trackbars", &leftIndent, 100);
 	createTrackbar("min depth", "Trackbars", &minDepth, 255);
 	createTrackbar("max depth", "Trackbars", &maxDepth, 255);
+	createTrackbar("diffThreshold", "Trackbars", &diffThreshold, 255);
 	createTrackbar("canny threshold 1", "Trackbars", &cannyThreshold1, 100);
 	createTrackbar("canny threshold 2", "Trackbars", &cannyThreshold2, 1000);
 	createTrackbar("min contour length", "Trackbars", &minContourLength, 1000);
@@ -130,7 +159,7 @@ int main()
 
 				//cout << "get frame to process" << endl;
 
-				backgroundFrame = stereoAnaliser.getFrame(resolution, 0, true);
+				backgroundFrame = stereoAnaliser.getFrame(resolution, 0, true, getBackgroundPhotoIndex());
 			break;
 		}
 
@@ -163,10 +192,13 @@ int main()
 		//cout << "process frame for gestures" << endl;
 		//frame = stereoAnaliser.getDisparityMap();
 
+
+		cout << (long long int)getTickCount() << endl;		
+
 		t = (double)getTickCount();
-		gesturePointList = gestureFinder.processFrame(frame, 100 * minGestureSquare, minGestureRatio / 100.);
+		gesturePointList = gestureFinder.processFrame(frame, 100 * minGestureSquare / 4, minGestureRatio / 200., diffThreshold);
 		//cout << "Time to find gestures: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
-		//imshow("processed frame", frame);		
+		imshow("processed frame", frame);		
 
 		vector<GesturePoint>::iterator gesturePoint;
 		for (gesturePoint = gesturePointList.begin(); gesturePoint < gesturePointList.end(); gesturePoint++) {
@@ -199,12 +231,12 @@ int main()
 		//cout << (float)rand() / RAND_MAX << endl;
 		imshow("Main", backgroundFrame);
 
-		cout << "Full time: " << 1 / (((double)getTickCount() - mt)/getTickFrequency()) << endl;
+		//cout << "Full time: " << 1 / (((double)getTickCount() - mt)/getTickFrequency()) << endl;
 	}
 
 	//Save settings
 	settings["leftIndent"] << leftIndent;
-
+	settings["minDepth"] << minDepth;
 	settings.release();
 
 }

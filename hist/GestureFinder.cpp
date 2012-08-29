@@ -9,7 +9,7 @@ GestureFinder::GestureFinder(int width, int height)
 
 GestureFinder::~GestureFinder() {};
 
-vector<GesturePoint> GestureFinder::processFrame(Mat frame, int minGestureSquare, float minGestureRatio)
+vector<GesturePoint> GestureFinder::processFrame(Mat frame, int minGestureSquare, float minGestureRatio, int diffThreshold)
 {
 	if (!previusFrame.data) {
 		previusFrame = frame.clone();
@@ -26,8 +26,8 @@ vector<GesturePoint> GestureFinder::processFrame(Mat frame, int minGestureSquare
 	//printf("diffFrame size: %d:%d\n", diffFrame.size().width, diffFrame.size().height);	
 
 	cvtColor(diffFrame, silhouette, CV_BGR2GRAY);
-	threshold(silhouette, silhouette, 35, 200, THRESH_BINARY);
-	//imshow("Silhouette", silhouette);
+	threshold(silhouette, silhouette, diffThreshold, 200, THRESH_BINARY);
+	imshow("Silhouette", silhouette);
 
 //	printf("%d:%d %d:%d\n", silhouette.size().width, silhouette.size().height, motionHistory.size().width, motionHistory.size().height);
 

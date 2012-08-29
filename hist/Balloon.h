@@ -20,6 +20,8 @@ struct ImageToMove
 	double velocity;
 	double t;
 	double phase;
+	
+	double updateTick;
 };
 
 class Balloon

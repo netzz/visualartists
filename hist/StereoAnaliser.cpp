@@ -135,7 +135,24 @@ cout << "1111";*/
 
 
 	//Load background photos
-	_backgroundPhotoList.push_back(imread("day1.png"));	
+	_backgroundPhotoList.push_back(imread("../date/background-photos/day1.png"));	
+	_backgroundPhotoList.push_back(imread("../date/background-photos/day2.png"));	
+	_backgroundPhotoList.push_back(imread("../date/background-photos/day3.png"));	
+	_backgroundPhotoList.push_back(imread("../date/background-photos/day4.png"));	
+
+	_backgroundPhotoList.push_back(imread("../date/background-photos/night1.png"));	
+	_backgroundPhotoList.push_back(imread("../date/background-photos/night2.png"));	
+	_backgroundPhotoList.push_back(imread("../date/background-photos/night3.png"));	
+	_backgroundPhotoList.push_back(imread("../date/background-photos/night4.png"));	
+/*
+	imshow("bf", _backgroundPhotoList[0]);
+	waitKey(0);
+	imshow("bf", _backgroundPhotoList[1]);
+	waitKey(0);
+	imshow("bf", _backgroundPhotoList[2]);
+	waitKey(0);
+	imshow("bf", _backgroundPhotoList[3]);
+	waitKey(0);*/
 }
 
 StereoAnaliser::~StereoAnaliser()
@@ -233,14 +250,13 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				resize(left, l, Size(320, 240));
 				resize(right, r, Size(320, 240));
 				
-				cout << "Time to cpuSgbm: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
+				//cout << "Time to cpuSgbm: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
 				//cout << "start cpu sgbm" << endl;
 				cpuSgbm(l, r, d);
 
 				resize(d, disparityMap, _resolution, INTER_CUBIC);
 				disparityMap.convertTo(_disparityMap, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
-
 
 				/*d.convertTo(d8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
 				//do inpaint
@@ -273,9 +289,9 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				cvtColor(_disparityMap, _frame, CV_GRAY2BGR);
 				/*minMaxLoc(kinectDepthMap, &min, &max, NULL, NULL);
 				cout << "min: " << min << " max: " << max << endl;
-				//imshow("kinect depth map", _disparityMap);
 				printf("Mean: %f\n", mean(_disparityMap)[0]);*/
 				//waitKey(0);
+				imshow("kinect depth map", _disparityMap);
 			break;
 		}		
 	
@@ -307,7 +323,7 @@ void StereoAnaliser::findEdges(double cannyThreshold1, double cannyThreshold2,
 	//Find contours
 	edges = Mat::zeros(_resolution, CV_8U);
 	Canny(_disparityMap, edges, cannyThreshold1, cannyThreshold2, sobelApertureSize);
-
+	imshow("canny", _disparityMap);
 	findContours(edges, contourList, hierarchy, CV_RETR_LIST, CHAIN_APPROX_TC89_L1);
 	//appContourList.resize(contourList.size());
 
@@ -345,9 +361,10 @@ Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour, in
 		Mat edges3C, edges3CBlur;
 
 		cvtColor(edges, edges3C, CV_GRAY2BGR);
-		drawContours(edges3C, appContourList, -1, Scalar(255, 255, 255), 4);
+		drawContours(edges3C, appContourList, -1, Scalar(5, 5, 5), 4);
 		//GaussianBlur(edges3C, edges3CBlur, Size(9, 9), 0);
 		edges3C.copyTo(frame, edges3C);
+		imshow("edges3C", edges3C);
 	}
 
 	Size inSize = frame.size();
