@@ -23,7 +23,7 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 
 	//Create VideoCaptures
 	printf("Open left camera...");
-	leftCamera.open(0);
+	leftCamera.open(2);
 	if (leftCamera.isOpened()) {
 		printf("Ok\n");
 		leftCamera.set(CV_CAP_PROP_FRAME_WIDTH, _resolution.width);

@@ -21,7 +21,7 @@ int getBackgroundPhotoIndex()
 		if (now->tm_hour < 20) {
 			index = cvRound((2 * (float)rand() / RAND_MAX));
 		} else {
-			index = 4 + cvRound((3 * (float)rand() / RAND_MAX));
+			index = 3 + cvRound((3 * (float)rand() / RAND_MAX));
 		}
 		time0 = now->tm_sec;
 	}
@@ -97,9 +97,9 @@ int main()
 	createTrackbar("min gesture ration", "Trackbars", &minGestureRatio, 15);
 
 
-	//stereoAnaliser.updateAndProcessStereoFrames(KINECT);
-	//stereoAnaliser.filterDepthMap(minDepth, maxDepth);
-	//previousFrame = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
+	stereoAnaliser.updateAndProcessStereoFrames(KINECT);
+	stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+	previousFrame = stereoAnaliser.getDisparityMap();//getFrame(Size(640, 480), 0, false);
 
 	while (key != 27) {
 		mt = (double)getTickCount();
