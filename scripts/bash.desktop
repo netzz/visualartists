@@ -1,0 +1,11 @@
+
+[Desktop Entry]
+Type=Application
+Exec=bash /home/user/visualartists/hist/release/start.sh 2>&1 &
+Hidden=false
+NoDisplay=false
+X-GNOME-Autostart-enabled=true
+Name[en_US]=start_app
+Name=start_app
+Comment[en_US]=
+Comment=
