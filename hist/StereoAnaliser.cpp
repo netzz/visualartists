@@ -157,7 +157,7 @@ cout << "1111";*/
 
 StereoAnaliser::~StereoAnaliser()
 {
-	cout << "destruct" << endl;
+	//cout << "destruct" << endl;
 	leftCamera.release();
 	rightCamera.release();
 	disparityVideo.release();
@@ -250,7 +250,7 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				resize(left, l, Size(320, 240));
 				resize(right, r, Size(320, 240));
 				
-				cout << "Time to cpuSgbm: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
+				//cout << "Time to cpuSgbm: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
 				//cout << "start cpu sgbm" << endl;
 				cpuSgbm(l, r, d);
@@ -399,9 +399,9 @@ double StereoAnaliser::getMeanDisparity(Mat mask)
 
 void StereoAnaliser::printParams() const
 {
-    cout << "--- Parameters ---\n";
-    cout << "image_size: (" << left.cols << ", " << left.rows << ")\n";
-    cout << "image_channels: " << left.channels() << endl;
+    //cout << "--- Parameters ---\n";
+    //cout << "image_size: (" << left.cols << ", " << left.rows << ")\n";
+    //cout << "image_channels: " << left.channels() << endl;
     //cout << "method: " << p.method_str() << endl
       //  << "ndisp: " << p.ndisp << endl;
    /* switch (p.method)
@@ -419,7 +419,7 @@ void StereoAnaliser::printParams() const
         cout << "level_count: " << csbp.levels << endl;
         break;
     }*/
-    cout << endl;
+    //cout << endl;
 }
 
 

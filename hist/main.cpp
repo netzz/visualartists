@@ -12,12 +12,12 @@ int getBackgroundPhotoIndex()
 	static int time0 = 0;
 	static int index = 0;
 
-	cout << "time0: " << time0 << endl;
+	//cout << "time0: " << time0 << endl;
 	
 	time_t t = time(NULL);
 	struct tm * now = localtime(&t);
 
-	if ((now->tm_sec - time0 > 2) or (now->tm_sec - time0 < 0)) {
+	if ((now->tm_sec - time0 > 25) or (now->tm_sec - time0 < 0)) {
 		if (now->tm_hour < 20) {
 			index = cvRound((2 * (float)rand() / RAND_MAX));
 		} else {
@@ -26,7 +26,7 @@ int getBackgroundPhotoIndex()
 		time0 = now->tm_sec;
 	}
 
-	cout << "index: " << index << endl;
+	//cout << "index: " << index << endl;
 	return index;
 }
 
@@ -129,7 +129,7 @@ int main()
 				//cout << "update and process frames" << endl;
 				t = (double)getTickCount();
 				stereoAnaliser.updateAndProcessStereoFrames(CPU_SGBM);
-				cout << "Time to get and process frames: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
+				//cout << "Time to get and process frames: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 		
 				//cout << "get frame to process" << endl;
 				frame = stereoAnaliser.getFrame(resolution, leftIndent, false);
@@ -140,7 +140,7 @@ int main()
 				//cout << "find edges" << endl;
 				t = (double)getTickCount();
 				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
-				cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
+				//cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
 				backgroundFrame = stereoAnaliser.getFrame(resolution, leftIndent, true);
 			break;
@@ -149,7 +149,7 @@ int main()
 				t = (double)getTickCount();
 				stereoAnaliser.updateAndProcessStereoFrames(KINECT);
 
-				cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
+				//cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 				//cout << "filter depth map" << endl;
 				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
 				
@@ -199,7 +199,7 @@ int main()
 		//frame = stereoAnaliser.getDisparityMap();
 
 
-		cout << (long long int)getTickCount() << endl;		
+		//cout << (long long int)getTickCount() << endl;		
 
 		t = (double)getTickCount();
 		gesturePointList = gestureFinder.processFrame(frame, 100 * minGestureSquare / 4, minGestureRatio / 200., diffThreshold);
@@ -239,7 +239,7 @@ int main()
 		t = (double)getTickCount();
 		imshow("Main", backgroundFrame);
 
-		cout << "Full time: " << 1 / (((double)getTickCount() - t)/getTickFrequency()) << endl;
+		//cout << "Full time: " << 1 / (((double)getTickCount() - t)/getTickFrequency()) << endl;
 	}
 
 	//Save settings
