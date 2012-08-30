@@ -135,7 +135,7 @@ cout << "1111";*/
 
 
 	//Load background photos
-	_backgroundPhotoList.push_back(imread("../date/background-photos/day1.png"));	
+	//_backgroundPhotoList.push_back(imread("../date/background-photos/day1.png"));	
 	_backgroundPhotoList.push_back(imread("../date/background-photos/day2.png"));	
 	_backgroundPhotoList.push_back(imread("../date/background-photos/day3.png"));	
 	_backgroundPhotoList.push_back(imread("../date/background-photos/day4.png"));	
@@ -279,7 +279,7 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 			break;
 			case KINECT:
 				//cout << "take depth map from kinect" << endl;
-				//kinectDepthMap = Mat(freenect_sync_get_depth_cv(0));//freenect_sync_get_depth_cv(0);
+				kinectDepthMap = Mat(freenect_sync_get_depth_cv(0));//freenect_sync_get_depth_cv(0);
 				Mat resizedDepthMap;
 				resize(kinectDepthMap, resizedDepthMap, _resolution);
 
