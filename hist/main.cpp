@@ -126,18 +126,18 @@ int main()
 		
 		switch(method) {
 			case CPU_SGBM:
-				//cout << "update and process frames" << endl;
+				cout << "update and process frames" << endl;
 				t = (double)getTickCount();
 				stereoAnaliser.updateAndProcessStereoFrames(CPU_SGBM);
 				//cout << "Time to get and process frames: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 		
-				//cout << "get frame to process" << endl;
+				cout << "get frame to process" << endl;
 				frame = stereoAnaliser.getFrame(resolution, leftIndent, false);
 
 				//cout << "filter depth map" << endl;
-				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
+				//stereoAnaliser.filterDepthMap(minDepth, maxDepth);
 
-				//cout << "find edges" << endl;
+				cout << "find edges" << endl;
 				t = (double)getTickCount();
 				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
 				//cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;

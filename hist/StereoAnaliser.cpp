@@ -23,7 +23,7 @@ StereoAnaliser::StereoAnaliser(Size resolution,  int fps, int writeVideoFlag)
 
 	//Create VideoCaptures
 	printf("Open left camera...");
-	leftCamera.open(2);
+	leftCamera.open(0);
 	if (leftCamera.isOpened()) {
 		printf("Ok\n");
 		leftCamera.set(CV_CAP_PROP_FRAME_WIDTH, _resolution.width);
@@ -210,14 +210,14 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				   //cvtColor(rightTemp, right, CV_BGR2GRAY);
 					
 				cvtColor(leftSrc, left, CV_BGR2GRAY);
-				cvtColor(rightSrc, right, CV_BGR2GRAY);
+//				cvtColor(rightSrc, right, CV_BGR2GRAY);
 				    
 				//d_left.upload(left);
 				//d_right.upload(right);
 
 					
 				imshow("left", left);
-				imshow("right", right);
+//				imshow("right", right);
 
 				//cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
 			    workBegin();
@@ -243,20 +243,20 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 			*/
 				
 				equalizeHist(left, left);
-				equalizeHist(right, right);
+//				equalizeHist(right, right);
 
-				
+				_disparityMap = left.clone();				
 				t = (double)getTickCount();
-				resize(left, l, Size(320, 240));
-				resize(right, r, Size(320, 240));
+//				resize(left, l, Size(320, 240));
+//				resize(right, r, Size(320, 240));
 				
 				//cout << "Time to cpuSgbm: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
 				//cout << "start cpu sgbm" << endl;
-				cpuSgbm(l, r, d);
+//				cpuSgbm(l, r, d);
 
-				resize(d, disparityMap, _resolution, INTER_CUBIC);
-				disparityMap.convertTo(_disparityMap, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
+//				resize(d, disparityMap, _resolution, INTER_CUBIC);
+//				disparityMap.convertTo(_disparityMap, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
 
 				/*d.convertTo(d8t, CV_8U, 255/(bmCpu.state->numberOfDisparities*16.));
 				//do inpaint
