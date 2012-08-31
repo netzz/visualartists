@@ -163,6 +163,17 @@ StereoAnaliser::~StereoAnaliser()
 	disparityVideo.release();
 }
 
+void StereoAnaliser::updateFrameFromKinectRgb()
+{
+	Mat rgb = Mat(freenect_sync_get_rgb_cv(0));
+	resize(rgb, _frame, _resolution);
+	
+	Mat grey;
+	cvtColor(rgb, grey, CV_BGR2GRAY);
+	
+	resize(grey, _disparityMap, Size(_resolution));
+}
+
 void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 {
 			    // Prepare disparity map of specified type
@@ -210,14 +221,12 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				   //cvtColor(rightTemp, right, CV_BGR2GRAY);
 					
 				cvtColor(leftSrc, left, CV_BGR2GRAY);
-//				cvtColor(rightSrc, right, CV_BGR2GRAY);
+				cvtColor(rightSrc, right, CV_BGR2GRAY);
 				    
 				//d_left.upload(left);
 				//d_right.upload(right);
 
 					
-				imshow("left", left);
-//				imshow("right", right);
 
 				//cout << "left frame size: " << left.size().width << "x" << left.size().height << endl;
 			    workBegin();
@@ -242,8 +251,11 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				}
 			*/
 				
-				equalizeHist(left, left);
+//				equalizeHist(left, left);
 //				equalizeHist(right, right);
+
+				imshow("left", left);
+				imshow("right", right);
 
 				_disparityMap = left.clone();				
 				t = (double)getTickCount();
@@ -292,6 +304,15 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
 				printf("Mean: %f\n", mean(_disparityMap)[0]);*/
 				//waitKey(0);
 				imshow("kinect depth map", _disparityMap);
+
+				//do inpaint
+				//get mask 
+				Mat inpaintMask, inpaintedDisp;
+				//threshold(_disparityMap, inpaintMask, 30, 100, THRESH_BINARY_INV);
+				//imshow("inpaintMask", inpaintMask);
+				//inpaint(_disparityMap, inpaintMask, inpaintedDisp, 9, CV_INPAINT_TELEA);
+//				medianBlur(_disparityMap, inpaintedDisp, 29);
+//				_disparityMap = inpaintedDisp.clone();
 			break;
 		}		
 	
@@ -310,6 +331,13 @@ void StereoAnaliser::updateAndProcessStereoFrames(depthMapMethod method)
     
 }
 
+void StereoAnaliser::blurDepthMap(int ksize)
+{
+	Mat blured;
+	medianBlur(_disparityMap, blured, ksize);
+	_disparityMap = blured.clone();
+}
+
 void StereoAnaliser::filterDepthMap(int min, int max)
 {
 	//do threshold operations
@@ -323,7 +351,8 @@ void StereoAnaliser::findEdges(double cannyThreshold1, double cannyThreshold2,
 	//Find contours
 	edges = Mat::zeros(_resolution, CV_8U);
 	Canny(_disparityMap, edges, cannyThreshold1, cannyThreshold2, sobelApertureSize);
-	imshow("canny", _disparityMap);
+//	adaptiveThreshold(_disparityMap, edges, 100, ADAPTIVE_THRESH_MEAN_C, THRESH_BINARY, cannyThreshold1 * 2 + 1, 0);
+	//imshow("canny", _disparityMap);
 	findContours(edges, contourList, hierarchy, CV_RETR_LIST, CHAIN_APPROX_TC89_L1);
 	//appContourList.resize(contourList.size());
 
@@ -335,7 +364,7 @@ void StereoAnaliser::findEdges(double cannyThreshold1, double cannyThreshold2,
 		if ((arcLength(appContour, false) > _minContourLength) and (arcLength(appContour, false) < _maxContourLength)) {
 			 appContourList.push_back(appContour);
 		}*/
-		if ((arcLength(contourList[c], true) > minContourLength)) {// and (arcLength(contourList[c], false) < _maxContourLength)) {
+		if ((arcLength(contourList[c], false) > minContourLength)) {// and (arcLength(contourList[c], false) < _maxContourLength)) {
 			 appContourList.push_back(contourList[c]);
 		}
 	}
@@ -358,13 +387,14 @@ Mat StereoAnaliser::getFrame(Size frameSize, int leftIndent, int drawContour, in
 
 	
 	if (drawContour) {
-		Mat edges3C, edges3CBlur;
-
-		cvtColor(edges, edges3C, CV_GRAY2BGR);
-		drawContours(edges3C, appContourList, -1, Scalar(255, 255, 255), 4);
+		Mat edges3C;//(_resolution, CV_8UC3); 
+		Mat edges3CBlur;
+		edges3C = Mat::zeros(_resolution, CV_8UC3);
+		//cvtColor(edges, edges3C, CV_GRAY2BGR);
+		drawContours(edges3C, appContourList, -1, Scalar(255, 255, 255), 2);
 		//GaussianBlur(edges3C, edges3CBlur, Size(9, 9), 0);
 		edges3C.copyTo(frame, edges3C);
-		imshow("edges3C", edges3C);
+		//imshow("edges3C", edges3C);
 	}
 
 	Size inSize = frame.size();

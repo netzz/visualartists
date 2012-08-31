@@ -36,7 +36,9 @@ vector<GesturePoint> GestureFinder::processFrame(Mat frame, int minGestureSquare
 	
 	//imshow("Diff", diffFrame);
 	motionHistory.convertTo(motionHistoryToShow, CV_8U);
-
+	Mat motionHistoryMask;
+	threshold(motionHistoryToShow, motionHistoryMask, 10, 200, THRESH_BINARY);
+	imshow("mhm", motionHistoryMask);
 	
 	Mat orientation, correctOrientationMask;
 	calcMotionGradient(motionHistory, correctOrientationMask, orientation, 300, 30);
@@ -60,7 +62,8 @@ vector<GesturePoint> GestureFinder::processFrame(Mat frame, int minGestureSquare
 	for (bound = motionBoundList.begin(); bound < motionBoundList.end(); bound++) {
 
 		//remove noises
-		if (bound->width * bound->width + bound->height * bound->height < minGestureSquare) {
+		//if (bound->width * bound->width + bound->height * bound->height < minGestureSquare) {
+			if (norm(motionHistoryMask(*bound), NORM_L1) / 200 < minGestureSquare) {
 			continue;
 		}
 	

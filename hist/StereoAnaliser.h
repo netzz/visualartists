@@ -34,7 +34,10 @@ public:
 
 	Mat disparityMap;
 
+
+	void updateFrameFromKinectRgb();
     void updateAndProcessStereoFrames(depthMapMethod method);
+	void blurDepthMap(int ksize);
 	void filterDepthMap(int minValue, int maxValue);
 	void findEdges(double cannyThreshold1, double cannyThreshold2, 
 								double sobelApertureSize, double minContourLength);

@@ -34,7 +34,6 @@ int main()
 {
 	srand(time(NULL));
 
-
 	Size resolution = Size(320, 240);
 
 	double t, mt;
@@ -62,6 +61,7 @@ int main()
 	vector<GesturePoint> gesturePointList;
 
 	int leftIndent = 10;
+	int blurKsize = 9;
 	int minDepth = 0;
 	int maxDepth = 255;
 	int diffThreshold = 30;
@@ -75,6 +75,7 @@ int main()
 	FileStorage settings("settings.yml", FileStorage::READ);
 	
 	settings["leftIndent"] >> leftIndent;
+	settings["blurKsize"] >> blurKsize;
 	settings["minDepth"] >> minDepth;
 	settings["maxDepth"] >> maxDepth;
 	settings["diffThresh"] >> diffThreshold;
@@ -87,6 +88,7 @@ int main()
 	
 	namedWindow("Trackbars");
 	createTrackbar("left indent", "Trackbars", &leftIndent, 100);
+	createTrackbar("blur ksize", "Trackbars", &blurKsize, 55);
 	createTrackbar("min depth", "Trackbars", &minDepth, 255);
 	createTrackbar("max depth", "Trackbars", &maxDepth, 255);
 	createTrackbar("diffThreshold", "Trackbars", &diffThreshold, 255);
@@ -128,10 +130,13 @@ int main()
 			case CPU_SGBM:
 				cout << "update and process frames" << endl;
 				t = (double)getTickCount();
-				stereoAnaliser.updateAndProcessStereoFrames(CPU_SGBM);
+				//stereoAnaliser.updateAndProcessStereoFrames(CPU_SGBM);
+				stereoAnaliser.updateFrameFromKinectRgb();
 				//cout << "Time to get and process frames: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 		
 				cout << "get frame to process" << endl;
+				stereoAnaliser.blurDepthMap(blurKsize * 2 + 1);
+
 				frame = stereoAnaliser.getFrame(resolution, leftIndent, false);
 
 				//cout << "filter depth map" << endl;
@@ -148,7 +153,8 @@ int main()
 				//cout << "update and process frames" << endl;
 				t = (double)getTickCount();
 				stereoAnaliser.updateAndProcessStereoFrames(KINECT);
-
+				
+				stereoAnaliser.blurDepthMap(blurKsize * 2 + 1);
 				//cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 				//cout << "filter depth map" << endl;
 				stereoAnaliser.filterDepthMap(minDepth, maxDepth);
@@ -157,7 +163,7 @@ int main()
 
 				//t = (double)getTickCount();
 				Mat f = previousFrame + currectFrame;
-				previousFrame = currectFrame;
+				previousFrame = currectFrame.clone();
 				cvtColor(f, frame, CV_GRAY2BGR);
 
 				//cout << "find edges" << endl;
@@ -237,6 +243,7 @@ int main()
 		//cout << (float)rand() / RAND_MAX << endl;
 		
 		t = (double)getTickCount();
+		flip(backgroundFrame, backgroundFrame, 1);
 		imshow("Main", backgroundFrame);
 
 		//cout << "Full time: " << 1 / (((double)getTickCount() - t)/getTickFrequency()) << endl;
@@ -245,6 +252,7 @@ int main()
 	//Save settings
 	settings.open("settings.yml", FileStorage::WRITE);
 	settings << "leftIndent" << leftIndent;
+	settings << "blurKsize" << blurKsize;
 	settings << "minDepth" << minDepth;
 	settings << "maxDepth" << maxDepth;
 	settings << "diffThresh" << diffThreshold;
