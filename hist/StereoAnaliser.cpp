@@ -166,7 +166,9 @@ StereoAnaliser::~StereoAnaliser()
 void StereoAnaliser::updateFrameFromKinectRgb()
 {
 	Mat rgb = Mat(freenect_sync_get_rgb_cv(0));
-	resize(rgb, _frame, _resolution);
+	Mat bgr;
+	cvtColor(rgb, bgr, CV_RGB2BGR);
+	resize(bgr, _frame, _resolution);
 	
 	Mat grey;
 	cvtColor(rgb, grey, CV_BGR2GRAY);
@@ -336,6 +338,7 @@ void StereoAnaliser::blurDepthMap(int ksize)
 	Mat blured;
 	medianBlur(_disparityMap, blured, ksize);
 	_disparityMap = blured.clone();
+	equalizeHist(_disparityMap, _disparityMap);
 }
 
 void StereoAnaliser::filterDepthMap(int min, int max)

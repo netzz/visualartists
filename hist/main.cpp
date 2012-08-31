@@ -17,13 +17,13 @@ int getBackgroundPhotoIndex()
 	time_t t = time(NULL);
 	struct tm * now = localtime(&t);
 
-	if ((now->tm_sec - time0 > 25) or (now->tm_sec - time0 < 0)) {
+	if ((now->tm_min - time0 > 5) or (now->tm_min - time0 < 0)) {
 		if (now->tm_hour < 20) {
 			index = cvRound((2 * (float)rand() / RAND_MAX));
 		} else {
 			index = 3 + cvRound((3 * (float)rand() / RAND_MAX));
 		}
-		time0 = now->tm_sec;
+		time0 = now->tm_min;
 	}
 
 	//cout << "index: " << index << endl;
@@ -42,6 +42,7 @@ int main()
 	Mat edges, edges3C;
 
 	namedWindow("Main", CV_WINDOW_NORMAL);
+	//setWindowProperty("Main", CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN);
 	Balloon balloon;
 	StereoAnaliser stereoAnaliser(resolution, 30, 0);
 	GestureFinder gestureFinder(resolution.width, resolution.height);
@@ -57,6 +58,7 @@ int main()
 	int key = 0;
 	depthMapMethod method = CPU_SGBM;
 	int doCartoon = 0;
+	Mat dm;
 
 	vector<GesturePoint> gesturePointList;
 
@@ -147,6 +149,8 @@ int main()
 				stereoAnaliser.findEdges(cannyThreshold1, cannyThreshold2, 3, minContourLength);
 				//cout << "Time to find edges: " << ((double)getTickCount() - t)/getTickFrequency() << endl;
 
+				dm = stereoAnaliser.getDisparityMap();
+				imshow("dm", dm);
 				backgroundFrame = stereoAnaliser.getFrame(resolution, leftIndent, true);
 			break;
 			case KINECT:
