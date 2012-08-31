@@ -179,7 +179,7 @@ int main()
 			break;
 		}
 
-		//imshow("disparity", stereoAnaliser.getDisparityMap());
+		imshow("disparity", stereoAnaliser.getDisparityMap());
 		/*
 		//convert to 256
 		Vec3b pixel;
