@@ -1,11 +1,11 @@
 %YAML:1.0
 leftIndent: 10
 blurKsize: 5
-minDepth: 70
+minDepth: 64
 maxDepth: 255
 diffThresh: 30
 cannyThresh1: 94
 cannyThresh2: 516
 minContourLen: 418
-minGestureSquare: 111
+minGestureSquare: 26
 minGestureRatio: 15

@@ -151,7 +151,7 @@ int main()
 
 				dm = stereoAnaliser.getDisparityMap();
 				imshow("dm", dm);
-				backgroundFrame = stereoAnaliser.getFrame(resolution, leftIndent, true);
+				backgroundFrame = stereoAnaliser.getFrame(resolution, leftIndent, false);
 			break;
 			case KINECT:
 				//cout << "update and process frames" << endl;
